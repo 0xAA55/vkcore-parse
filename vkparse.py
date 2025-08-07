@@ -44,7 +44,7 @@ def parse(input):
 				continue
 			if line.startswith('#include'):
 				continue
-			if line.startswith('#define VK_') and line.endswith(' 1') and indent == 0:
+			if line.startswith('#define VK_') and line.endswith(' 1') and indent == 0 and 'SPEC_VERSION' not in line:
 				cur_ver = line.split(' ', 2)[1];
 				ret[cur_ver] = {
 					'typedefs': {},
