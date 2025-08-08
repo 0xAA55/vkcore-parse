@@ -377,7 +377,7 @@ def to_rust(outfile, parsed):
 		if '[' in name:
 			name, size = name.split('[', 1)
 			size = size.split(']', 1)[0]
-			type = f'[{type}; {size}]'
+			type = f'[{type}; {size} as usize]'
 			if is_param: type = f'&{type}'
 		if name == 'type': name = f'{name}_'
 		return name, type
