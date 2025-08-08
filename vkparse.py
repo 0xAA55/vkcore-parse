@@ -159,8 +159,6 @@ def parse(input, initial = {}, is_include_header = 0):
 					enabled = True
 				else:
 					continue
-			if 'VK_MAKE_' in line and '_VERSION' in line:
-				continue
 			if line.startswith(('#define VK_', '#define vulkan_')) and line.endswith(' 1') and indent == 0 and '_SPEC_VERSION ' not in line:
 				cur_ver = line.split(' ', 2)[1];
 				ret[cur_ver] = {
@@ -197,6 +195,31 @@ def parse(input, initial = {}, is_include_header = 0):
 					continue
 				while f'{value[0]}{value[-1]}' == '()':
 					value = value[1:-1]
+				def try_redir(ident):
+					ident = ident.strip()
+					try:
+						val = all_const_values[ident]
+					except KeyError:
+						val = ident
+					return int(val)
+				def vk_make_version(major_minor_patch):
+					major, minor, patch = major_minor_patch.split('(', 1)[1].split(')', 1)[0].split(',')
+					major, minor, patch = try_redir(major), try_redir(minor), try_redir(patch)
+					return hex((major << 22) | (minor << 12) | patch)
+				def vk_make_api_version(variant_major_minor_patch):
+					variant, major, minor, patch = variant_major_minor_patch.split('(', 1)[1].split(')', 1)[0].split(',')
+					variant, major, minor, patch = try_redir(variant), try_redir(major), try_redir(minor), try_redir(patch)
+					return hex((variant << 29) | (major << 22) | (minor << 12) | patch)
+				def vk_make_video_std_version(major_minor_patch):
+					major, minor, patch = major_minor_patch.split('(', 1)[1].split(')', 1)[0].split(',')
+					major, minor, patch = try_redir(major), try_redir(minor), try_redir(patch)
+					return hex((major << 22) | (minor << 12) | patch)
+				if value.startswith('VK_MAKE_VERSION'):
+					value = vk_make_version(value[len('VK_MAKE_VERSION'):])
+				elif value.startswith('VK_MAKE_API_VERSION'):
+					value = vk_make_api_version(value[len('VK_MAKE_API_VERSION'):])
+				elif value.startswith('VK_MAKE_VIDEO_STD_VERSION'):
+					value = vk_make_video_std_version(value[len('VK_MAKE_VIDEO_STD_VERSION'):])
 				if ident != cur_ver:
 					ret[cur_ver]['constants'][ident] = value
 					all_const_values |= {ident: value}
