@@ -17,8 +17,8 @@ def pushd(new_dir):
 	finally:
 		os.chdir(previous_dir)
 
-def parse(input):
-	ret = {}
+def parse(input, initial = {}, is_include_header = 0):
+	ret = initial
 	cur_ver = ''
 	sharp_if_level = 0
 	is_enum = False
@@ -37,6 +37,7 @@ def parse(input):
 	cur_union_name = ''
 	cur_struct_name = ''
 	all_enum = {}
+	all_const = {}
 	must_alias = {
 		'int8_t': 'i8',
 		'int16_t': 'i16',
@@ -67,7 +68,16 @@ def parse(input):
 		'double': 'f64',
 		'const char*': "&'static str",
 	}
+	try:
+		metadata = ret['metadata']
+		all_enum = metadata['all_enum']
+		all_const = metadata['all_const']
+		must_alias |= metadata['must_alias']
+	except KeyError:
+		pass
 	enabled = False
+	if is_include_header:
+		enabled = True
 	last_line = ''
 	with open(input, 'r') as f:
 		for line in f:
