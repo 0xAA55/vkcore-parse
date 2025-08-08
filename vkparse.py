@@ -79,6 +79,7 @@ def parse(input, initial = {}, is_include_header = 0):
 	if is_include_header:
 		enabled = True
 	last_line = ''
+	echo_indent = '    ' * is_include_header
 	with open(input, 'r') as f:
 		for line in f:
 			if is_multiline_comment:
@@ -120,14 +121,16 @@ def parse(input, initial = {}, is_include_header = 0):
 					is_cpp = False
 				continue
 			if line.startswith('#include'):
-				print('\t' * is_include_header + line)
+				print(echo_indent, end='')
+				print(line)
 				if '<' in line or '>' in line:
 					continue
 				include_file = line.split('"', 2)[1]
 				include_path = os.path.dirname(include_file)
 				include_file = os.path.basename(include_file)
 				if include_file == 'vk_platform.h':
-					print('\t' * is_include_header + 'Skipped: "vk_platform.h"')
+					print(echo_indent, end='')
+					print('Skipped: "vk_platform.h"')
 					continue
 				with pushd(include_path):
 					ret['metadata'] = {
@@ -168,13 +171,16 @@ def parse(input, initial = {}, is_include_header = 0):
 						if ' ' not in type and '*' not in type:
 							ret[cur_ver]['typedefs'][type] = alias
 			if is_cpp:
-				print('\t' * is_include_header + f'Skip cpp code: {line}')
+				print(echo_indent, end='')
+				print(f'Skip cpp code: {line}')
 				continue
 			if line.startswith('#define ') and line.endswith('_H_ 1'):
-				print('\t' * is_include_header + line)
+				print(echo_indent, end='')
+				print(line)
 				continue
 			if cur_ver == '':
-				print('\t' * is_include_header + f'Unversioned line: {line}')
+				print(echo_indent, end='')
+				print(f'Unversioned line: {line}')
 				continue
 			if line.startswith('#define '):
 				parts = line.split(' ', 2)
@@ -200,7 +206,8 @@ def parse(input, initial = {}, is_include_header = 0):
 					cur_enum |= {name.strip(): value.strip()}
 					all_enum |= {name.strip(): [value.strip(), cur_enum_name]}
 				else:
-					print('\t' * is_include_header + f'Unknown data in enum: "{line}"')
+					print(echo_indent, end='')
+					print(f'Unknown data in enum: "{line}"')
 				continue
 			elif is_union:
 				if line.startswith('}'):
@@ -213,7 +220,8 @@ def parse(input, initial = {}, is_include_header = 0):
 					type, name = line.rsplit(' ', 1)
 					cur_union |= {name.strip(): type.strip()}
 				else:
-					print('\t' * is_include_header + f'Unknown data in union: "{line}"')
+					print(echo_indent, end='')
+					print(f'Unknown data in union: "{line}"')
 				continue
 			elif is_struct:
 				while ' :' in line or ': ' in line:
@@ -228,14 +236,16 @@ def parse(input, initial = {}, is_include_header = 0):
 					type, name = line.rsplit(' ', 1)
 					cur_struct |= {name.strip(): type.strip()}
 				else:
-					print('\t' * is_include_header + f'Unknown data in struct: "{line}"')
+					print(echo_indent, end='')
+					print(f'Unknown data in struct: "{line}"')
 				continue
 			elif is_proto:
 				if line.startswith('VKAPI_ATTR '):
 					if line.endswith('('):
 						ret[cur_ver]['funcs'] += [line[:-1].rsplit(' ', 1)[-1]]
 					else:
-						print('\t' * is_include_header + f'Unknown data in function declaration: "{line}"')
+						print(echo_indent, end='')
+						print(f'Unknown data in function declaration: "{line}"')
 				continue
 			elif is_typedef_func:
 				if line.endswith(');'):
@@ -282,7 +292,8 @@ def parse(input, initial = {}, is_include_header = 0):
 								else:
 									params |= {f'_param_{params.len()}': type.strip()}
 						else:
-							print('\t' * is_include_header + f'Unknown data in function prototype: "{line}"')
+							print(echo_indent, end='')
+							print(f'Unknown data in function prototype: "{line}"')
 							continue
 						cur_func = {
 							'ret_type': line[len('typedef '):].split('(', 1)[0].strip(),
@@ -297,7 +308,8 @@ def parse(input, initial = {}, is_include_header = 0):
 							type, name = line[len('typedef '):].rsplit(' ', 1)
 							ret[cur_ver]['typedefs'] |= {name: type}
 						else:
-							print('\t' * is_include_header + f'Unknown data in typedef: "{line}"')
+							print(echo_indent, end='')
+							print(f'Unknown data in typedef: "{line}"')
 					continue
 				if line.startswith('VK_DEFINE_HANDLE'):
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
