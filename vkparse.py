@@ -88,9 +88,8 @@ def parse(input):
 					if line.endswith(','):
 						line = line[:-1]
 					name, value = line.split('=', 1)
-					new_enum = {name.strip(): value.strip()}
-					cur_enum |= new_enum
-					all_enum |= new_enum
+					cur_enum |= {name.strip(): value.strip()}
+					all_enum |= {name.strip(): [value.strip(), cur_enum_name]}
 				else:
 					print(f'Unknown data in enum: "{line}"')
 				continue
