@@ -438,7 +438,16 @@ def to_rust(outfile, parsed):
 		except KeyError:
 			pass
 		return type
+	vk_struct = io.StringIO()
+	vk_traits = io.StringIO()
+	vk_s_impl = io.StringIO()
+	vk_struct.write('#[derive(Default, Debug, Clone, Copy)]\n');
+	vk_struct.write('pub struct VkCore {\n');
+	vk_s_impl.write('impl VkCore {\n')
+	vk_s_impl.write("\tpub fn new(instance: VkInstance, mut get_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
+	vk_s_impl.write('\t\tSelf {\n')
 	def process_version(version, verdata, f):
+		nonlocal vk_struct, vk_traits, vk_s_impl
 		constants = verdata['constants']
 		typedefs = verdata['typedefs']
 		handles = verdata['handles']
@@ -584,13 +593,29 @@ def to_rust(outfile, parsed):
 		traits = io.StringIO()
 		struct = io.StringIO()
 		t_impl = io.StringIO()
+		d_impl = io.StringIO()
+		s_impl = io.StringIO()
 		struct_version = f'Vulkan_{version[len("VK_"):]}'
+		snake_version = to_snake(version)
 		traits.write(f'pub trait {version}: Debug {{')
 		struct.write(f'#[derive(Debug, Clone, Copy)]\n')
 		struct.write(f'pub struct {struct_version} {{\n')
 		t_impl.write(f'impl {version} for {struct_version} {{\n')
+		d_impl.write(f'impl Default for {struct_version} {{\n')
+		d_impl.write('\tfn default() -> Self {\n')
+		d_impl.write('\t\tSelf {\n')
+		s_impl.write(f'impl {struct_version} {{\n')
+		vk_struct.write(f'\tpub {snake_version}: {struct_version},\n')
+		vk_traits.write(f'impl {version} for VkCore {{')
+		vk_s_impl.write(f'\t\t\t{snake_version}: {struct_version}::new(instance, &mut get_proc_address),\n')
 		snakes = {}
-		if len(funcs): traits.write('\n')
+		if len(funcs):
+			traits.write('\n')
+			vk_traits.write('\n')
+			s_impl.write("\tpub fn new(instance: VkInstance, mut get_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
+		else:
+			s_impl.write("\tpub fn new(_instance: VkInstance, _get_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
+		s_impl.write('\t\tSelf {\n')
 		for func in funcs:
 			func_snake = to_snake(func)
 			snakes[func_snake] = func
@@ -606,27 +631,43 @@ def to_rust(outfile, parsed):
 			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
 			traits.write(f'\tfn {func}(&self, {", ".join(params)})')
 			t_impl.write(f'\tfn {func}(&self, {", ".join(params)})')
+			vk_traits.write(f'\tfn {func}(&self, {", ".join(params)})')
+			d_impl.write(f'\t\t\t{func_snake}: dummy_{func},\n');
+			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_proc_address(instance, "{func}"); if proc == null() {{dummy_{func}}} else {{unsafe {{transmute(proc)}}}}}},\n')
 			ret_type = func_data["ret_type"]
 			if ret_type == 'void':
 				dummys.write(' {\n')
 				traits.write(';\n')
 				t_impl.write(' {\n')
+				vk_traits.write(' {\n')
 			else:
 				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
 				traits.write(f' -> {ctype_to_rust(ret_type)};\n')
 				t_impl.write(f' -> {ctype_to_rust(ret_type)} {{\n')
+				vk_traits.write(f' -> {ctype_to_rust(ret_type)} {{\n')
 			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL");\n');
 			dummys.write('}\n')
 			t_impl.write(f'\t\t(self.{func_snake})({", ".join(param_call)})\n')
 			t_impl.write('\t}\n')
+			vk_traits.write(f'\t\t(self.{snake_version}.{func_snake})({", ".join(param_call)})\n')
+			vk_traits.write('\t}\n')
 			struct.write(f'\t{func_snake}: PFN_{func},\n')
 		traits.write('}\n')
 		struct.write('}\n')
 		t_impl.write('}\n')
+		d_impl.write('\t\t}\n')
+		d_impl.write('\t}\n')
+		d_impl.write('}\n')
+		s_impl.write('\t\t}\n')
+		s_impl.write('\t}\n')
+		s_impl.write('}\n')
+		vk_traits.write('}\n')
 		f.write(dummys.getvalue())
 		f.write(traits.getvalue())
 		f.write(struct.getvalue())
 		f.write(t_impl.getvalue())
+		f.write(d_impl.getvalue())
+		f.write(s_impl.getvalue())
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
@@ -637,12 +678,21 @@ def to_rust(outfile, parsed):
 		f.write('use std::{\n')
 		f.write('\tffi::c_void,\n')
 		f.write('\tfmt::{self, Debug, Formatter},\n')
+		f.write('\tmem::transmute,\n')
+		f.write('\tptr::null,\n')
 		f.write('};\n')
 		f.write('\n')
 		for version, verdata in parsed.items():
 			if version == 'metadata':
 				continue
 			process_version(version, verdata, f)
+		vk_struct.write('}\n')
+		vk_s_impl.write('\t\t}\n')
+		vk_s_impl.write('\t}\n')
+		vk_s_impl.write('}\n')
+		f.write(vk_struct.getvalue())
+		f.write(vk_traits.getvalue())
+		f.write(vk_s_impl.getvalue())
 
 
 if __name__ == '__main__':
