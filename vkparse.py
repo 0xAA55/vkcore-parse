@@ -762,6 +762,16 @@ def to_rust(outfile, parsed):
 		f.write('\tptr::{null, null_mut},\n')
 		f.write('};\n')
 		f.write('\n')
+		f.write('pub fn vk_make_version(major: u32, minor: u32, patch: u32) -> u32 {\n')
+		f.write('\t(major << 22) | (minor << 12) | patch\n')
+		f.write('}\n')
+		f.write('pub fn vk_make_api_version(variant: u32, major: u32, minor: u32, patch: u32) -> u32 {\n')
+		f.write('\t(variant << 29) | (major << 22) | (minor << 12) | patch\n')
+		f.write('}\n')
+		f.write('pub fn vk_make_video_std_version(major: u32, minor: u32, patch: u32) -> u32 {\n')
+		f.write('\t(major << 22) | (minor << 12) | patch\n')
+		f.write('}\n')
+		f.write('\n')
 		for version, verdata in parsed.items():
 			if version == 'metadata':
 				continue
