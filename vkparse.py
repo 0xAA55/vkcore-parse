@@ -410,14 +410,6 @@ def to_rust(outfile, parsed):
 		f.write('};\n')
 		f.write('use modular_bitfield::prelude::*;\n')
 		f.write('\n')
-		f.write('type int8_t  = i8;\n')
-		f.write('type int16_t = i16;\n')
-		f.write('type int32_t = i32;\n')
-		f.write('type int64_t = i64;\n')
-		f.write('type uint8_t  = u8;\n')
-		f.write('type uint16_t = u16;\n')
-		f.write('type uint32_t = u32;\n')
-		f.write('type uint64_t = u64;\n')
 		for version, verdata in parsed.items():
 			if version == 'metadata':
 				continue
