@@ -384,12 +384,12 @@ def to_rust(outfile, parsed):
 	def process_constant_value(value):
 		while True:
 			try:
-				value = all_const[value]
+				value = all_const_values[value]
 			except KeyError:
 				break
 		while True:
 			try:
-				value, source = all_enum[value]
+				value, source = all_enum_values[value]
 			except KeyError:
 				break
 		type_ = None
