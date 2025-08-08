@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*
 import io
+import os
 import json
+
+# The `pushd()` implementation from `https://gist.github.com/howardhamilton/537e13179489d6896dd3`
+from contextlib import contextmanager
+
+@contextmanager
+def pushd(new_dir):
+	previous_dir = os.getcwd()
+	if len(new_dir):
+		os.chdir(new_dir)
+	try:
+		yield
+	finally:
+		os.chdir(previous_dir)
 
 def parse(input):
 	ret = {}
