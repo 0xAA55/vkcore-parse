@@ -583,10 +583,12 @@ def to_rust(outfile, parsed):
 		dummys = io.StringIO()
 		traits = io.StringIO()
 		struct = io.StringIO()
+		t_impl = io.StringIO()
 		struct_version = f'Vulkan_{version[len("VK_"):]}'
 		traits.write(f'pub trait {version}: Debug {{')
 		struct.write(f'#[derive(Debug, Clone, Copy)]\n')
 		struct.write(f'pub struct {struct_version} {{\n')
+		t_impl.write(f'impl {version} for {struct_version} {{\n')
 		snakes = {}
 		if len(funcs): traits.write('\n')
 		for func in funcs:
@@ -595,27 +597,36 @@ def to_rust(outfile, parsed):
 			func_data = func_protos[f'PFN_{func}']
 			params = []
 			params_dummy = []
+			param_call = []
 			for param_name, param_type in func_data['params'].items():
 				param_name, param_type = process_guts(param_name, param_type, is_param = True)
 				params += [f'{param_name}: {param_type}']
 				params_dummy += [f'_: {param_type}']
+				param_call += [param_name]
 			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
 			traits.write(f'\tfn {func}(&self, {", ".join(params)})')
+			t_impl.write(f'\tfn {func}(&self, {", ".join(params)})')
 			ret_type = func_data["ret_type"]
 			if ret_type == 'void':
 				dummys.write(' {\n')
 				traits.write(';\n')
+				t_impl.write(' {\n')
 			else:
 				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
 				traits.write(f' -> {ctype_to_rust(ret_type)};\n')
+				t_impl.write(f' -> {ctype_to_rust(ret_type)} {{\n')
 			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL");\n');
 			dummys.write('}\n')
+			t_impl.write(f'\t\t(self.{func_snake})({", ".join(param_call)})\n')
+			t_impl.write('\t}\n')
 			struct.write(f'\t{func_snake}: PFN_{func},\n')
 		traits.write('}\n')
 		struct.write('}\n')
+		t_impl.write('}\n')
 		f.write(dummys.getvalue())
 		f.write(traits.getvalue())
 		f.write(struct.getvalue())
+		f.write(t_impl.getvalue())
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
