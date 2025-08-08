@@ -413,6 +413,9 @@ def to_rust(outfile, parsed):
 		for version, verdata in parsed.items():
 			if version == 'metadata':
 				continue
+			for constant, value in verdata['constants'].items():
+				constval, consttype = process_constant_value(value)
+				f.write(f'pub const {constant}: {consttype} = {constval};\n')
 			for type, tname in verdata['typedefs'].items():
 				if tname == 'void*':
 					tname = 'c_void'
