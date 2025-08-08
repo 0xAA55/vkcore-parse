@@ -495,20 +495,29 @@ def to_rust(outfile, parsed):
 			f.write('\t}\n')
 			f.write('}\n')
 		for struct_name, struct_guts in verdata['structs'].items():
-			has_bitfield = False
 			struct = io.StringIO()
-			struct.write('#[derive(Debug, Clone)]\n')
+			struct.write('#[derive(Debug, Clone, Copy)]\n')
 			struct.write(f'pub struct {struct_name} {{\n')
 			for name, type in struct_guts.items():
 				name, type = process_guts(name, type)
 				if ':' in name:
-					has_bitfield = True
-					name, bits = name.split(':', 1)
-					struct.write(f'\t#[bits = {bits}]\n');
+					# Discard old code, regenerate the struct
+					struct = io.StringIO()
+					struct.write('#[bitfield]\n')
+					struct.write('#[derive(Debug, Clone, Copy, Specifier)]\n')
+					struct.write(f'pub struct {struct_name} {{\n')
+					for name, type in struct_guts.items():
+						type = struct_member_type_process(struct, type)
+						if ':' in name:
+							name, bits = name.split(':', 1)
+							struct.write(f'\t#[bits = {bits}]\n');
+						else:
+							struct.write(f'\t#[skip]\n');
+						struct.write(f'\t{name}: {type},\n')
+					break
+				type = struct_member_type_process(struct, type)
 				struct.write(f'\t{name}: {type},\n')
 			struct.write('}\n')
-			if has_bitfield:
-				f.write('#[bitfield]\n');
 			f.write(struct.getvalue());
 		for functype_name, func_data in verdata['func_protos'].items():
 			f.write(f'type {functype_name} = extern "system" fn(');
