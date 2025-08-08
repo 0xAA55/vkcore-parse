@@ -307,7 +307,11 @@ def parse(input, initial = {}, is_include_header = 0):
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
 					ret[cur_ver]['non_dispatchable_handles'] += [handle_name]
 					continue
-	ret['metadata'] = {'all_enum': all_enum}
+	ret['metadata'] = {
+		'all_enum': all_enum,
+		'all_const': all_const,
+		'must_alias': must_alias,
+	}
 	return ret
 
 def to_rust(outfile, parsed):
