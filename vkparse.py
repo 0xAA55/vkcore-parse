@@ -438,7 +438,7 @@ def to_rust(outfile, parsed):
 		except KeyError:
 			pass
 		return type
-	def process_version(verdata, f):
+	def process_version(version, verdata, f):
 		constants = verdata['constants']
 		typedefs = verdata['typedefs']
 		handles = verdata['handles']
@@ -563,20 +563,32 @@ def to_rust(outfile, parsed):
 				f.write(f');\n')
 			else:
 				f.write(f') -> {ctype_to_rust(ret_type)};\n')
+		dummys = io.StringIO()
+		traits = io.StringIO()
+		traits.write(f'pub trait {version}: Debug {{')
+		if len(funcs): traits.write('\n')
 		for func in funcs:
 			func_data = func_protos[f'PFN_{func}']
 			params = []
+			params_dummy = []
 			for param_name, param_type in func_data['params'].items():
 				param_name, param_type = process_guts(param_name, param_type, is_param = True)
-				params += [f'_: {param_type}']
-			f.write(f'extern "system" fn dummy_{func}({", ".join(params)})')
+				params += [f'{param_name}: {param_type}']
+				params_dummy += [f'_: {param_type}']
+			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
+			traits.write(f'\tfn {func}({", ".join(params)})')
 			ret_type = func_data["ret_type"]
 			if ret_type == 'void':
-				f.write(' {\n')
+				dummys.write(' {\n')
+				traits.write(';\n')
 			else:
-				f.write(f' -> {ctype_to_rust(ret_type)} {{\n')
-			f.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL");\n');
-			f.write('}\n')
+				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
+				traits.write(f' -> {ctype_to_rust(ret_type)};\n')
+			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL");\n');
+			dummys.write('}\n')
+		traits.write('}\n')
+		f.write(dummys.getvalue())
+		f.write(traits.getvalue())
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
@@ -592,7 +604,7 @@ def to_rust(outfile, parsed):
 		for version, verdata in parsed.items():
 			if version == 'metadata':
 				continue
-			process_version(verdata, f)
+			process_version(version, verdata, f)
 
 
 if __name__ == '__main__':
