@@ -356,6 +356,17 @@ def to_rust(outfile, parsed):
 				rust = f'{rust.strip()} {ctype}'.strip()
 				break
 		return rust
+	def process_guts(name, type, is_param = False):
+		type = ctype_to_rust(type)
+		if type.startswith('const '):
+			type = type[len('const '):]
+		if '[' in name:
+			name, size = name.split('[', 1)
+			size = size.split(']', 1)[0]
+			type = f'[{type}; {size}]'
+			if is_param: type = f'&{type}'
+		if name == 'type': name = f'{name}_'
+		return name, type
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
