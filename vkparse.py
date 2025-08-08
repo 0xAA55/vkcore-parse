@@ -558,7 +558,11 @@ def to_rust(outfile, parsed):
 				param_name, param_type = process_guts(param_name, param_type, is_param = True)
 				params += [f'{param_name}: {param_type}']
 			f.write(', '.join(params))
-			f.write(f') -> {ctype_to_rust(func_data["ret_type"])};\n')
+			ret_type = func_data["ret_type"]
+			if ret_type == 'void':
+				f.write(f');\n')
+			else:
+				f.write(f') -> {ctype_to_rust(ret_type)};\n')
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
