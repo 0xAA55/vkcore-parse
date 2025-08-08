@@ -756,7 +756,7 @@ def to_rust(outfile, parsed):
 		f.write('\n')
 		f.write('use std::{\n')
 		f.write('\tcollections::BTreeSet,\n')
-		f.write('\tffi::{c_void, CStr, CString},\n')
+		f.write('\tffi::{c_void, CStr},\n')
 		f.write('\tfmt::{self, Debug, Formatter},\n')
 		f.write('\tmem::transmute,\n')
 		f.write('\tptr::{null, null_mut},\n')
