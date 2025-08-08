@@ -327,7 +327,10 @@ def parse(input, initial = {}, is_include_header = 0):
 	return ret
 
 def to_rust(outfile, parsed):
-	all_enum = parsed['metadata']['all_enum']
+	metadata = parsed['metadata']
+	all_enum = metadata['all_enum']
+	all_const = metadata['all_const']
+	must_alias = metadata['must_alias']
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
