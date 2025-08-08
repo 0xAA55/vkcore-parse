@@ -25,6 +25,7 @@ def parse(input):
 	is_union = False
 	is_struct = False
 	is_proto = False
+	is_cpp = False
 	is_typedef_func = False
 	is_multiline_comment = False
 	cur_func = {}
@@ -97,6 +98,17 @@ def parse(input):
 				sharp_if_level += 1
 				if line.startswith('#ifndef VK_NO_PROTOTYPES'):
 					is_proto = True
+				elif line.startswith('#ifdef __cplusplus'):
+					is_cpp = True
+				continue
+			if line.startswith("#else"):
+				continue
+			if line.startswith('#endif'):
+				sharp_if_level -= 1
+				if sharp_if_level <= 1:
+					is_proto = False
+					is_cpp = False
+				continue
 				continue
 			if enabled == False:
 				if line.startswith('#define VK_VERSION_1_0 1'):
@@ -120,12 +132,7 @@ def parse(input):
 					'funcs': [],
 					'func_protos': {},
 				}
-			if line.startswith("#else"):
 				continue
-			if line.startswith('#endif'):
-				sharp_if_level -= 1
-				if sharp_if_level <= 1:
-					is_proto = False
 				continue
 			if cur_ver == '':
 				print(f'Unversioned line: {line}')
