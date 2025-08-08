@@ -400,6 +400,69 @@ def to_rust(outfile, parsed):
 		if type_ is None:
 			type_ = 'u32'
 		return value, type_
+	def process_version(verdata, f):
+		for constant, value in verdata['constants'].items():
+			constval, consttype = process_constant_value(value)
+			f.write(f'pub const {constant}: {consttype} = {constval};\n')
+		for type, tname in verdata['typedefs'].items():
+			tname = ctype_to_rust(tname)
+			f.write(f'type {type} = {tname};\n')
+		for handle in verdata['handles']:
+			f.write(f'// Define handle `{handle}`\n')
+			f.write(f'#[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
+			f.write(f'type {handle} = *const {handle}_T;\n')
+		for handle in verdata['non_dispatchable_handles']:
+			f.write(f'// Define non-dispatchable handle `{handle}`\n')
+			f.write(f'#[cfg(target_pointer_width = "32")] type {handle} = u64;\n')
+			f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
+			f.write(f'#[cfg(target_pointer_width = "64")] type {handle} = *const {handle}_T;\n')
+		for enum, enumpair in verdata['enums'].items():
+			asso = io.StringIO()
+			f.write(f'pub enum {enum} {{\n')
+			for enumname, enumval in enumpair.items():
+				try:
+					enumdef, enumfrom = all_enum[enumval]
+					asso.write(f'\tpub const {enumname}: {enumfrom} = {enumfrom}::{enumval};\n')
+				except KeyError:
+					enumval, valtype = process_constant_value(enumval)
+					f.write(f'\t{enumname} = {enumval},\n')
+			f.write('}\n')
+			asso = asso.getvalue()
+			if len(asso):
+				f.write(f'impl {enum} {{\n')
+				f.write(asso)
+				f.write('}\n')
+			asso = None
+		for union_name, union_guts in verdata['unions'].items():
+			f.write(f'pub union {union_name} {{\n')
+			for name, type in union_guts.items():
+				name, type = process_guts(name, type)
+				f.write(f'\t{name}: {type},\n')
+			f.write('}\n')
+		for struct_name, struct_guts in verdata['structs'].items():
+			has_bitfield = False
+			struct = io.StringIO()
+			struct.write('#[derive(Debug, Clone)]\n')
+			struct.write(f'pub struct {struct_name} {{\n')
+			for name, type in struct_guts.items():
+				name, type = process_guts(name, type)
+				if ':' in name:
+					has_bitfield = True
+					name, bits = name.split(':', 1)
+					struct.write(f'\t#[bits = {bits}]\n');
+				struct.write(f'\t{name}: {type},\n')
+			struct.write('}\n')
+			if has_bitfield:
+				f.write('#[bitfield]\n');
+			f.write(struct.getvalue());
+		for functype_name, func_data in verdata['func_protos'].items():
+			f.write(f'type {functype_name} = extern "system" fn(');
+			params = []
+			for param_name, param_type in func_data['params'].items():
+				param_name, param_type = process_guts(param_name, param_type, is_param = True)
+				params += [f'{param_name}: {param_type}']
+			f.write(', '.join(params))
+			f.write(f') -> {ctype_to_rust(func_data["ret_type"])};\n')
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
@@ -413,68 +476,8 @@ def to_rust(outfile, parsed):
 		for version, verdata in parsed.items():
 			if version == 'metadata':
 				continue
-			for constant, value in verdata['constants'].items():
-				constval, consttype = process_constant_value(value)
-				f.write(f'pub const {constant}: {consttype} = {constval};\n')
-			for type, tname in verdata['typedefs'].items():
-				tname = ctype_to_rust(tname)
-				f.write(f'type {type} = {tname};\n')
-			for handle in verdata['handles']:
-				f.write(f'// Define handle `{handle}`\n')
-				f.write(f'#[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
-				f.write(f'type {handle} = *const {handle}_T;\n')
-			for handle in verdata['non_dispatchable_handles']:
-				f.write(f'// Define non-dispatchable handle `{handle}`\n')
-				f.write(f'#[cfg(target_pointer_width = "32")] type {handle} = u64;\n')
-				f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
-				f.write(f'#[cfg(target_pointer_width = "64")] type {handle} = *const {handle}_T;\n')
-			for enum, enumpair in verdata['enums'].items():
-				asso = io.StringIO()
-				f.write(f'pub enum {enum} {{\n')
-				for enumname, enumval in enumpair.items():
-					try:
-						enumdef, enumfrom = all_enum[enumval]
-						asso.write(f'\tpub const {enumname}: {enumfrom} = {enumfrom}::{enumval};\n')
-					except KeyError:
-						enumval, valtype = process_constant_value(enumval)
-						f.write(f'\t{enumname} = {enumval},\n')
-				f.write('}\n')
-				asso = asso.getvalue()
-				if len(asso):
-					f.write(f'impl {enum} {{\n')
-					f.write(asso)
-					f.write('}\n')
-				asso = None
-			for union_name, union_guts in verdata['unions'].items():
-				f.write(f'pub union {union_name} {{\n')
-				for name, type in union_guts.items():
-					name, type = process_guts(name, type)
-					f.write(f'\t{name}: {type},\n')
-				f.write('}\n')
-			for struct_name, struct_guts in verdata['structs'].items():
-				has_bitfield = False
-				struct = io.StringIO()
-				struct.write('#[derive(Debug, Clone)]\n')
-				struct.write(f'pub struct {struct_name} {{\n')
-				for name, type in struct_guts.items():
-					name, type = process_guts(name, type)
-					if ':' in name:
-						has_bitfield = True
-						name, bits = name.split(':', 1)
-						struct.write(f'\t#[bits = {bits}]\n');
-					struct.write(f'\t{name}: {type},\n')
-				struct.write('}\n')
-				if has_bitfield:
-					f.write('#[bitfield]\n');
-				f.write(struct.getvalue());
-			for functype_name, func_data in verdata['func_protos'].items():
-				f.write(f'type {functype_name} = extern "system" fn(');
-				params = []
-				for param_name, param_type in func_data['params'].items():
-					param_name, param_type = process_guts(param_name, param_type, is_param = True)
-					params += [f'{param_name}: {param_type}']
-				f.write(', '.join(params))
-				f.write(f') -> {ctype_to_rust(func_data["ret_type"])};\n')
+			process_version(version, verdata)
+
 
 if __name__ == '__main__':
 	parsed = parse('vulkan_core.h')
