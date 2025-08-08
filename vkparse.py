@@ -170,6 +170,8 @@ def parse(input, initial = {}, is_include_header = 0):
 			if is_cpp:
 				print('\t' * is_include_header + f'Skip cpp code: {line}')
 				continue
+			if line.startswith('#define ') and line.endswith('_H_ 1'):
+				print('\t' * is_include_header + line)
 				continue
 			if cur_ver == '':
 				print(f'Unversioned line: {line}')
