@@ -430,8 +430,8 @@ def to_rust(outfile, parsed):
 			f.write(f'#[cfg(target_pointer_width = "32")] type {handle} = u64;\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] type {handle} = *const {handle}_T;\n')
-		already_values = set()
 		for enum, enumpair in verdata['enums'].items():
+			already_values = {}
 			asso = io.StringIO()
 			f.write(f'pub enum {enum} {{\n')
 			for enumname, enumval in enumpair.items():
