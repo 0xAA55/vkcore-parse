@@ -535,12 +535,12 @@ def to_rust(outfile, parsed):
 			f.write(f'pub type {type} = {tname};\n')
 		for handle in handles:
 			f.write(f'// Define handle `{handle}`\n')
-			f.write(f'#[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
+			f.write(f'#[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
 			f.write(f'pub type {handle} = *const {handle}_T;\n')
 		for handle in non_dispatchable_handles:
 			f.write(f'// Define non-dispatchable handle `{handle}`\n')
 			f.write(f'#[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
-			f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
+			f.write(f'#[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
 		for enum, enumpair in enums.items():
 			already_values = {}
