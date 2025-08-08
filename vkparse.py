@@ -479,10 +479,20 @@ def to_rust(outfile, parsed):
 				f.write('}\n')
 			asso = None
 		for union_name, union_guts in verdata['unions'].items():
+			f.write('#[derive(Clone, Copy)]\n')
 			f.write(f'pub union {union_name} {{\n')
 			for name, type in union_guts.items():
 				name, type = process_guts(name, type)
 				f.write(f'\t{name}: {type},\n')
+			f.write('}\n')
+			f.write(f'impl Debug for {union_name} {{\n')
+			f.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
+			f.write(f'\t\tf.debug_union("{union_name}")\n')
+			for name, type in union_guts.items():
+				name = name.split('[', 1)[0]
+				f.write(f'\t\t.field("{name}", &self.{name})\n')
+			f.write('\t\t.finish()\n')
+			f.write('\t}\n')
 			f.write('}\n')
 		for struct_name, struct_guts in verdata['structs'].items():
 			has_bitfield = False
@@ -515,6 +525,7 @@ def to_rust(outfile, parsed):
 		f.write('\n')
 		f.write('use std::{\n')
 		f.write('\tffi::c_void,\n')
+		f.write('\tfmt::{self, Debug, Formatter},\n')
 		f.write('};\n')
 		f.write('use modular_bitfield::prelude::*;\n')
 		f.write('\n')
