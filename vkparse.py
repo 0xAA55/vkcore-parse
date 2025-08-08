@@ -436,13 +436,7 @@ def to_rust(outfile, parsed):
 						enumdef, enumfrom = all_enum[enumval]
 						asso.write(f'\tpub const {enumname}: {enumfrom} = {enumfrom}::{enumval};\n')
 					except KeyError:
-						enumval = enumval.lower()
-						if enumval.endswith('ull'): enumval = f'{enumval[:-3]}u64'
-						if enumval.endswith('ll'): enumval = f'{enumval[:-2]}i64'
-						if enumval.endswith('u'): enumval = f'{enumval[:-1]}u32'
-						if enumval.endswith('l'): enumval = f'{enumval[:-1]}i32'
-						if enumval.endswith('f') and '.' in enumval: enumval = f'{enumval[:-1]}f32'
-						if enumval[0] == '~': enumval = f'!{enumval[1:]}'
+						enumval, valtype = process_constant_value(enumval)
 						f.write(f'\t{enumname} = {enumval},\n')
 				f.write('}\n')
 				asso = asso.getvalue()
