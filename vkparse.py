@@ -501,7 +501,7 @@ def to_rust(outfile, parsed):
 			f.write(f'\t\tf.debug_struct("{union_name}")\n')
 			for name, type in union_guts.items():
 				name = name.split('[', 1)[0]
-				f.write(f'\t\t.field("{name}", &self.{name})\n')
+				f.write(f'\t\t.field("{name}", unsafe {{&self.{name}}})\n')
 			f.write('\t\t.finish()\n')
 			f.write('\t}\n')
 			f.write('}\n')
