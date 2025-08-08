@@ -414,6 +414,16 @@ def to_rust(outfile, parsed):
 		if type_ is None:
 			type_ = 'u32'
 		return value, type_
+	def union_member_type_process(union, type):
+		is_enum = type in all_enum_names
+		if is_enum:
+			struct.write(f'\t/// Original type: {type}\n');
+			type = 'u32'
+		try:
+			type = must_alias[type]
+		except KeyError:
+			pass
+		return type
 	def process_version(verdata, f):
 		for constant, value in verdata['constants'].items():
 			constval, consttype = process_constant_value(value)
