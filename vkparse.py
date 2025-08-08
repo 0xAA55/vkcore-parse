@@ -588,6 +588,7 @@ def to_rust(outfile, parsed):
 						last_is_upper = False
 					ret += a
 			while ret[0] == '_': ret = ret[1:]
+			while '__' in ret: ret = ret.replace('__', '_')
 			return ret
 		dummys = io.StringIO()
 		traits = io.StringIO()
