@@ -408,6 +408,7 @@ def to_rust(outfile, parsed):
 		f.write('use std::{\n')
 		f.write('\tffi::c_void,\n')
 		f.write('};\n')
+		f.write('use modular_bitfield::prelude::*;\n')
 		f.write('\n')
 		f.write('type int8_t  = i8;\n')
 		f.write('type int16_t = i16;\n')
