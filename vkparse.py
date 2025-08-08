@@ -167,6 +167,8 @@ def parse(input, initial = {}, is_include_header = 0):
 					for type, alias in must_alias.items():
 						if ' ' not in type and '*' not in type:
 							ret[cur_ver]['typedefs'][type] = alias
+			if is_cpp:
+				print('\t' * is_include_header + f'Skip cpp code: {line}')
 				continue
 				continue
 			if cur_ver == '':
