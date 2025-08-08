@@ -457,6 +457,7 @@ def to_rust(outfile, parsed):
 		for enum, enumpair in verdata['enums'].items():
 			already_values = {}
 			asso = io.StringIO()
+			f.write('#[repr(C)]\n')
 			f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
 			f.write(f'pub enum {enum} {{\n')
 			for enumname, enumval in enumpair.items():
@@ -479,6 +480,7 @@ def to_rust(outfile, parsed):
 				f.write('}\n')
 			asso = None
 		for union_name, union_guts in verdata['unions'].items():
+			f.write('#[repr(C)]\n')
 			f.write('#[derive(Clone, Copy)]\n')
 			f.write(f'pub union {union_name} {{\n')
 			for name, type in union_guts.items():
@@ -500,6 +502,7 @@ def to_rust(outfile, parsed):
 			last_bits = 0
 			struct = io.StringIO()
 			s_impl = io.StringIO()
+			struct.write('#[repr(C)]\n')
 			struct.write('#[derive(Debug, Clone, Copy)]\n')
 			struct.write(f'pub struct {struct_name} {{\n')
 			for name, type in struct_guts.items():
