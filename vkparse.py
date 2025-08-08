@@ -495,30 +495,50 @@ def to_rust(outfile, parsed):
 			f.write('\t}\n')
 			f.write('}\n')
 		for struct_name, struct_guts in verdata['structs'].items():
+			has_bitfield = False
+			num_bitfields = 0
+			last_bits = 0
 			struct = io.StringIO()
+			s_impl = io.StringIO()
 			struct.write('#[derive(Debug, Clone, Copy)]\n')
 			struct.write(f'pub struct {struct_name} {{\n')
 			for name, type in struct_guts.items():
 				name, type = process_guts(name, type)
 				if ':' in name:
-					# Discard old code, regenerate the struct
-					struct = io.StringIO()
-					struct.write('#[bitfield]\n')
-					struct.write('#[derive(Debug, Clone, Copy, Specifier)]\n')
-					struct.write(f'pub struct {struct_name} {{\n')
-					for name, type in struct_guts.items():
-						type = struct_member_type_process(struct, type)
-						if ':' in name:
-							name, bits = name.split(':', 1)
-							struct.write(f'\t#[bits = {bits}]\n');
-						else:
-							struct.write(f'\t#[skip]\n');
-						struct.write(f'\t{name}: {type},\n')
-					break
-				type = struct_member_type_process(struct, type)
-				struct.write(f'\t{name}: {type},\n')
+					if has_bitfield == False:
+						has_bitfield = True
+						num_bitfields = 1
+						s_impl.write(f'impl {struct_name} {{\n')
+					name, bits = name.split(':', 1)
+					bits = int(bits)
+					bf_name = f'bitfield{num_bitfields}'
+					struct.write(f'\t/// Bitfield: {name}: {type} in {bits} bits\n')
+					s_impl.write(f'\tpub fn get_{name}(&self) -> u32 {{\n')
+					s_impl.write(f'\t\t(self.{bf_name} >> {last_bits}) & {hex((1 << bits) - 1)}\n')
+					s_impl.write('\t}\n')
+					s_impl.write(f'\tpub fn set_{name}(&mut self, value: u32) {{\n')
+					s_impl.write(f'\t\tself.{bf_name} = (value & {hex((1 << bits) - 1)}) << {last_bits};\n')
+					s_impl.write('\t}\n')
+					last_bits += bits
+					last_bits %= 32
+					if last_bits == 0:
+						struct.write(f'\t{bf_name}: u32,\n')
+						num_bitfields += 1
+				else:
+					if last_bits:
+						bf_name = f'bitfield{num_bitfields}'
+						struct.write(f'\t{bf_name}: u32,\n')
+						num_bitfields += 1
+						last_bits = 0;
+					struct.write(f'\t{name}: {type},\n')
+			if last_bits:
+				bf_name = f'bitfield{num_bitfields}'
+				struct.write(f'\t{bf_name}: u32,\n')
 			struct.write('}\n')
+			if has_bitfield:
+				s_impl.write('}\n')
 			f.write(struct.getvalue());
+			f.write(s_impl.getvalue());
 		for functype_name, func_data in verdata['func_protos'].items():
 			f.write(f'type {functype_name} = extern "system" fn(');
 			params = []
@@ -536,7 +556,6 @@ def to_rust(outfile, parsed):
 		f.write('\tffi::c_void,\n')
 		f.write('\tfmt::{self, Debug, Formatter},\n')
 		f.write('};\n')
-		f.write('use modular_bitfield::prelude::*;\n')
 		f.write('\n')
 		for version, verdata in parsed.items():
 			if version == 'metadata':
