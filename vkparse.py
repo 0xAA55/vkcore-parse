@@ -573,7 +573,7 @@ def to_rust(outfile, parsed):
 			f.write(f'pub union {union_name} {{\n')
 			for name, type in union_guts.items():
 				name, type = process_guts(name, type)
-				f.write(f'\t{name}: {type},\n')
+				f.write(f'\tpub {name}: {type},\n')
 			f.write('}\n')
 			f.write(f'impl Debug for {union_name} {{\n')
 			f.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
