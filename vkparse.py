@@ -467,6 +467,14 @@ def to_rust(outfile, parsed):
 				if has_bitfield:
 					f.write('#[bitfield]\n');
 				f.write(struct.getvalue());
+			for functype_name, func_data in verdata['func_protos'].items():
+				f.write(f'type {functype_name} = extern "system" fn(');
+				params = []
+				for param_name, param_type in func_data['params'].items():
+					param_name, param_type = process_guts(param_name, param_type, is_param = True)
+					params += [f'{param_name}: {param_type}']
+				f.write(', '.join(params))
+				f.write(f') -> {ctype_to_rust(func_data["ret_type"])};\n')
 
 if __name__ == '__main__':
 	parsed = parse('vulkan_core.h')
