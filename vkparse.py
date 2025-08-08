@@ -476,7 +476,7 @@ def to_rust(outfile, parsed):
 		for version, verdata in parsed.items():
 			if version == 'metadata':
 				continue
-			process_version(version, verdata)
+			process_version(verdata, f)
 
 
 if __name__ == '__main__':
