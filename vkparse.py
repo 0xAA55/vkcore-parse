@@ -36,8 +36,10 @@ def parse(input, initial = {}, is_include_header = 0):
 	cur_enum_name = ''
 	cur_union_name = ''
 	cur_struct_name = ''
-	all_enum = {}
-	all_const = {}
+	all_enum_names = set()
+	all_enum_values = {}
+	all_const_values = {}
+	all_struct_names = set()
 	must_alias = {
 		'int8_t': 'i8',
 		'int16_t': 'i16',
@@ -70,8 +72,10 @@ def parse(input, initial = {}, is_include_header = 0):
 	}
 	try:
 		metadata = ret['metadata']
-		all_enum = metadata['all_enum']
-		all_const = metadata['all_const']
+		all_enum_names |= set(metadata['all_enum_names'])
+		all_enum_values = metadata['all_enum_values']
+		all_const_values = metadata['all_const_values']
+		all_struct_names |= set(metadata['all_struct_names'])
 		must_alias |= metadata['must_alias']
 	except KeyError:
 		pass
@@ -134,16 +138,20 @@ def parse(input, initial = {}, is_include_header = 0):
 					continue
 				with pushd(include_path):
 					ret['metadata'] = {
-						'all_enum': all_enum,
-						'all_const': all_const,
+						'all_enum_names': all_enum_names,
+						'all_enum_values': all_enum_values,
+						'all_const_values': all_const_values,
+						'all_struct_names': all_struct_names,
 						'must_alias': must_alias,
 					}
 					parsed = parse(include_file, ret, is_include_header + 1)
 					metadata = parsed['metadata'].copy()
 					del parsed['metadata']
 					ret |= parsed
-					all_enum |= metadata['all_enum']
-					all_const |= metadata['all_const']
+					all_enum_names |= set(metadata['all_enum_names'])
+					all_enum_values |= metadata['all_enum_values']
+					all_const_values |= metadata['all_const_values']
+					all_struct_names |= set(metadata['all_struct_names'])
 					must_alias |= metadata['must_alias']
 				continue
 			if enabled == False:
@@ -191,7 +199,7 @@ def parse(input, initial = {}, is_include_header = 0):
 					value = value[1:-1]
 				if ident != cur_ver:
 					ret[cur_ver]['constants'][ident] = value
-					all_const |= {ident: value}
+					all_const_values |= {ident: value}
 				continue
 			if is_enum:
 				if line.startswith('}'):
@@ -204,7 +212,7 @@ def parse(input, initial = {}, is_include_header = 0):
 						line = line[:-1]
 					name, value = line.split('=', 1)
 					cur_enum |= {name.strip(): value.strip()}
-					all_enum |= {name.strip(): [value.strip(), cur_enum_name]}
+					all_enum_values |= {name.strip(): [value.strip(), cur_enum_name]}
 				else:
 					print(echo_indent, end='')
 					print(f'Unknown data in enum: "{line}"')
@@ -264,6 +272,7 @@ def parse(input, initial = {}, is_include_header = 0):
 					is_enum = True
 					cur_enum_name = line[len('typedef enum '):].split(' ', 1)[0]
 					cur_enum = {}
+					all_enum_names |= {cur_enum_name}
 					continue
 				if line.startswith('typedef union '):
 					is_union = True
@@ -274,6 +283,7 @@ def parse(input, initial = {}, is_include_header = 0):
 					is_struct = True
 					cur_struct_name = line[len('typedef struct '):].split(' ', 1)[0]
 					cur_struct = {}
+					all_struct_names |= {cur_enum_name}
 					continue
 				if line.startswith('typedef '):
 					if 'VKAPI_PTR' in line:
@@ -320,16 +330,20 @@ def parse(input, initial = {}, is_include_header = 0):
 					ret[cur_ver]['non_dispatchable_handles'] += [handle_name]
 					continue
 	ret['metadata'] = {
-		'all_enum': all_enum,
-		'all_const': all_const,
+		'all_enum_names': list(all_enum_names),
+		'all_enum_values': all_enum_values,
+		'all_const_values': all_const_values,
+		'all_struct_names': list(all_struct_names),
 		'must_alias': must_alias,
 	}
 	return ret
 
 def to_rust(outfile, parsed):
 	metadata = parsed['metadata']
-	all_enum = metadata['all_enum']
-	all_const = metadata['all_const']
+	all_enum_names = set(metadata['all_enum_names'])
+	all_enum_values = metadata['all_enum_values']
+	all_const_values = metadata['all_const_values']
+	all_struct_names = set(metadata['all_struct_names'])
 	must_alias = metadata['must_alias']
 	def ctype_to_rust(ctype):
 		ctype = ctype.replace(' *', '*')
