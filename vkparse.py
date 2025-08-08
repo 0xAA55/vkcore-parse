@@ -163,6 +163,10 @@ def parse(input, initial = {}, is_include_header = 0):
 					'funcs': [],
 					'func_protos': {},
 				}
+				if cur_ver == 'VK_VERSION_1_0':
+					for type, alias in must_alias.items():
+						if ' ' not in type and '*' not in type:
+							ret[cur_ver]['typedefs'][type] = alias
 				continue
 				continue
 			if cur_ver == '':
