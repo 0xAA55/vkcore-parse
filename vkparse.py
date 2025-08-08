@@ -179,8 +179,7 @@ def parse(input, initial = {}, is_include_header = 0):
 			if line.startswith('#define '):
 				parts = line.split(' ', 2)
 				ident, value = parts[1], parts[2].strip()
-				if '(' in ident or ')' in ident:
-					print(f'Skipped #define {ident} {value}')
+				if '(' in ident or ')' in ident or ident.endswith(('_SPEC_VERSION', '_EXTENSION_NAME')):
 					continue
 				while f'{value[0]}{value[-1]}' == '()':
 					value = value[1:-1]
