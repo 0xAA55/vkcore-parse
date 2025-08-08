@@ -66,7 +66,7 @@ def parse(input, initial = {}, is_include_header = 0):
 		'unsigned long long': 'u64',
 		'float': 'f32',
 		'double': 'f64',
-		'const char*': "&'static str",
+		'const char*': "*const i8",
 	}
 	try:
 		metadata = ret['metadata']
