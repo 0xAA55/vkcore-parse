@@ -445,6 +445,12 @@ def to_rust(outfile, parsed):
 					f.write(asso)
 					f.write('}\n')
 				asso = None
+			for union_name, union_guts in verdata['unions'].items():
+				f.write(f'pub union {union_name} {{\n')
+				for name, type in union_guts.items():
+					name, type = process_guts(name, type)
+					f.write(f'\t{name}: {type},\n')
+				f.write('}\n')
 
 if __name__ == '__main__':
 	parsed = parse('vulkan_core.h')
