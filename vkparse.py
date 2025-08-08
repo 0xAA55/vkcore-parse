@@ -532,16 +532,16 @@ def to_rust(outfile, parsed):
 			f.write(f'pub const {constant}: {consttype} = {constval};\n')
 		for type, tname in typedefs.items():
 			tname = ctype_to_rust(tname)
-			f.write(f'type {type} = {tname};\n')
+			f.write(f'pub type {type} = {tname};\n')
 		for handle in handles:
 			f.write(f'// Define handle `{handle}`\n')
 			f.write(f'#[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
-			f.write(f'type {handle} = *const {handle}_T;\n')
+			f.write(f'pub type {handle} = *const {handle}_T;\n')
 		for handle in non_dispatchable_handles:
 			f.write(f'// Define non-dispatchable handle `{handle}`\n')
-			f.write(f'#[cfg(target_pointer_width = "32")] type {handle} = u64;\n')
+			f.write(f'#[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
-			f.write(f'#[cfg(target_pointer_width = "64")] type {handle} = *const {handle}_T;\n')
+			f.write(f'#[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
 		for enum, enumpair in enums.items():
 			already_values = {}
 			asso = io.StringIO()
@@ -618,13 +618,13 @@ def to_rust(outfile, parsed):
 				else:
 					if last_bits:
 						bf_name = f'bitfield{num_bitfields}'
-						struct.write(f'\t{bf_name}: u32,\n')
+						struct.write(f'\tpub {bf_name}: u32,\n')
 						num_bitfields += 1
 						last_bits = 0;
-					struct.write(f'\t{name}: {type},\n')
+					struct.write(f'\tpub {name}: {type},\n')
 			if last_bits:
 				bf_name = f'bitfield{num_bitfields}'
-				struct.write(f'\t{bf_name}: u32,\n')
+				struct.write(f'\tpub {bf_name}: u32,\n')
 			struct.write('}\n')
 			if has_bitfield:
 				s_impl.write('}\n')
