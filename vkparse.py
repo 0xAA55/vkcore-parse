@@ -600,7 +600,7 @@ def to_rust(outfile, parsed):
 				params += [f'{param_name}: {param_type}']
 				params_dummy += [f'_: {param_type}']
 			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
-			traits.write(f'\tfn {func}({", ".join(params)})')
+			traits.write(f'\tfn {func}(&self, {", ".join(params)})')
 			ret_type = func_data["ret_type"]
 			if ret_type == 'void':
 				dummys.write(' {\n')
