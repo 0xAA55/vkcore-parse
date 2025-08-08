@@ -582,9 +582,16 @@ def to_rust(outfile, parsed):
 			return ret
 		dummys = io.StringIO()
 		traits = io.StringIO()
+		struct = io.StringIO()
+		struct_version = f'Vulkan_{version[len("VK_"):]}'
 		traits.write(f'pub trait {version}: Debug {{')
+		struct.write(f'#[derive(Debug, Clone, Copy)]\n')
+		struct.write(f'pub struct {struct_version} {{\n')
+		snakes = {}
 		if len(funcs): traits.write('\n')
 		for func in funcs:
+			func_snake = to_snake(func)
+			snakes[func_snake] = func
 			func_data = func_protos[f'PFN_{func}']
 			params = []
 			params_dummy = []
@@ -603,9 +610,12 @@ def to_rust(outfile, parsed):
 				traits.write(f' -> {ctype_to_rust(ret_type)};\n')
 			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL");\n');
 			dummys.write('}\n')
+			struct.write(f'\t{func_snake}: PFN_{func},\n')
 		traits.write('}\n')
+		struct.write('}\n')
 		f.write(dummys.getvalue())
 		f.write(traits.getvalue())
+		f.write(struct.getvalue())
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
