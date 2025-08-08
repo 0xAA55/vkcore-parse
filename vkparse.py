@@ -35,6 +35,36 @@ def parse(input):
 	cur_union_name = ''
 	cur_struct_name = ''
 	all_enum = {}
+	must_alias = {
+		'int8_t': 'i8',
+		'int16_t': 'i16',
+		'int32_t': 'i32',
+		'int64_t': 'i64',
+		'uint8_t': 'u8',
+		'uint16_t': 'u16',
+		'uint32_t': 'u32',
+		'uint64_t': 'u64',
+		'size_t': 'usize',
+		'char': 'i8',
+		'signed char': 'i8',
+		'unsigned char': 'u8',
+		'short': 'i16',
+		'signed short': 'i16',
+		'unsigned short': 'u16',
+		'int': 'i32',
+		'signed int': 'i32',
+		'unsigned': 'u32',
+		'unsigned int': 'u32',
+		'long': 'i64',
+		'signed long': 'i64',
+		'unsigned long': 'u64',
+		'long long': 'i64',
+		'signed long long': 'i64',
+		'unsigned long long': 'u64',
+		'float': 'f32',
+		'double': 'f64',
+		'const char*': "&'static str",
+	}
 	enabled = False
 	with open(input, 'r') as f:
 		for line in f:
