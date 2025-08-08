@@ -234,17 +234,28 @@ def to_rust(outfile, parsed):
 				f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
 				f.write(f'#[cfg(target_pointer_width = "64")] type {handle} = *const {handle}_T;\n')
 			for enum, enumpair in verdata['enums'].items():
+				asso = io.StringIO()
 				f.write(f'pub enum {enum} {{\n')
 				for enumname, enumval in enumpair.items():
-					enumval = enumval.lower()
-					if enumval.endswith('ull'): enumval = f'{enumval[:-3]}u64'
-					if enumval.endswith('ll'): enumval = f'{enumval[:-2]}i64'
-					if enumval.endswith('u'): enumval = f'{enumval[:-1]}u32'
-					if enumval.endswith('l'): enumval = f'{enumval[:-1]}i32'
-					if enumval.endswith('f') and '.' in enumval: enumval = f'{enumval[:-1]}f32'
-					if enumval[0] == '~': enumval = f'!{enumval[1:]}'
-					f.write(f'\t{enumname} = {enumval},\n')
+					try:
+						enumdef, enumfrom = all_enum[enumval]
+						asso.write(f'\tpub const {enumname}: {enumfrom} = {enumfrom}::{enumval};\n')
+					except KeyError:
+						enumval = enumval.lower()
+						if enumval.endswith('ull'): enumval = f'{enumval[:-3]}u64'
+						if enumval.endswith('ll'): enumval = f'{enumval[:-2]}i64'
+						if enumval.endswith('u'): enumval = f'{enumval[:-1]}u32'
+						if enumval.endswith('l'): enumval = f'{enumval[:-1]}i32'
+						if enumval.endswith('f') and '.' in enumval: enumval = f'{enumval[:-1]}f32'
+						if enumval[0] == '~': enumval = f'!{enumval[1:]}'
+						f.write(f'\t{enumname} = {enumval},\n')
 				f.write('}\n')
+				asso = asso.getvalue()
+				if len(asso):
+					f.write(f'impl {enum} {{\n')
+					f.write(asso)
+					f.write('}\n')
+				asso = None
 
 if __name__ == '__main__':
 	parsed = parse('vulkan_core.h')
