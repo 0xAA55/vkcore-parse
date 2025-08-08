@@ -243,8 +243,9 @@ def parse(input, initial = {}, is_include_header = 0):
 					line = line[:-2]
 				elif line.endswith(','):
 					line = line[:-1]
-				param_type, param_name = line.rsplit(' ', 1)
-				cur_func['params'] |= {param_name.strip(): param_type.strip()}
+				for param in line.split(','):
+					param_type, param_name = param.rsplit(' ', 1)
+					cur_func['params'] |= {param_name.strip(): param_type.strip()}
 				if is_typedef_func == False:
 					ret[cur_ver]['func_protos'][cur_func_name] = cur_func.copy()
 					cur_func = {}
