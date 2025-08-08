@@ -150,7 +150,7 @@ def parse(input, initial = {}, is_include_header = 0):
 					continue
 			if 'VK_MAKE_' in line and '_VERSION' in line:
 				continue
-			if line.startswith('#define VK_') and line.endswith(' 1') and indent == 0 and 'SPEC_VERSION' not in line:
+			if line.startswith(('#define VK_', '#define vulkan_')) and line.endswith(' 1') and indent == 0 and line.endswith('_SPEC_VERSION') == False:
 				cur_ver = line.split(' ', 2)[1];
 				ret[cur_ver] = {
 					'typedefs': {},
