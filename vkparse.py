@@ -195,9 +195,11 @@ def parse(input):
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
 					ret[cur_ver]['non_dispatchable_handles'] += [handle_name]
 					continue
+	ret['metadata'] = {'all_enum': all_enum}
 	return ret
 
 def to_rust(outfile, parsed):
+	all_enum = parsed['metadata']['all_enum']
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
@@ -216,6 +218,8 @@ def to_rust(outfile, parsed):
 		f.write('type uint32_t = u32;\n')
 		f.write('type uint64_t = u64;\n')
 		for version, verdata in parsed.items():
+			if version == 'metadata':
+				continue
 			for type, tname in verdata['typedefs'].items():
 				if tname == 'void*':
 					tname = 'c_void'
