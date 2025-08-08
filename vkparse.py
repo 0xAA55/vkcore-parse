@@ -416,6 +416,7 @@ def to_rust(outfile, parsed):
 			f.write(f'#[cfg(target_pointer_width = "32")] type {handle} = u64;\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] type {handle} = *const {handle}_T;\n')
+		already_values = set()
 		for enum, enumpair in verdata['enums'].items():
 			asso = io.StringIO()
 			f.write(f'pub enum {enum} {{\n')
@@ -425,7 +426,11 @@ def to_rust(outfile, parsed):
 					asso.write(f'\tpub const {enumname}: {enumfrom} = {enumfrom}::{enumval};\n')
 				except KeyError:
 					enumval, valtype = process_constant_value(enumval)
-					f.write(f'\t{enumname} = {enumval},\n')
+					if enumval in already_values:
+						asso.write(f'\tpub const {enumname}: {enum} = {enum}::{enumval};\n')
+					else:
+						f.write(f'\t{enumname} = {enumval},\n')
+						already_values |= {enumval}
 			f.write('}\n')
 			asso = asso.getvalue()
 			if len(asso):
