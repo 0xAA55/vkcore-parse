@@ -563,6 +563,20 @@ def to_rust(outfile, parsed):
 				f.write(f');\n')
 			else:
 				f.write(f') -> {ctype_to_rust(ret_type)};\n')
+		for func in funcs:
+			func_data = func_protos[f'PFN_{func}']
+			params = []
+			for param_name, param_type in func_data['params'].items():
+				param_name, param_type = process_guts(param_name, param_type, is_param = True)
+				params += [f'_: {param_type}']
+			f.write(f'extern "system" fn dummy_{func}({", ".join(params)})')
+			ret_type = func_data["ret_type"]
+			if ret_type == 'void':
+				f.write(' {\n')
+			else:
+				f.write(f' -> {ctype_to_rust(ret_type)} {{\n')
+			f.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL");\n');
+			f.write('}\n')
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
