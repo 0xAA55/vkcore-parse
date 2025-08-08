@@ -216,6 +216,8 @@ def parse(input, initial = {}, is_include_header = 0):
 					print(f'Unknown data in union: "{line}"')
 				continue
 			elif is_struct:
+				while ' :' in line or ': ' in line:
+					line = line.replace(' :', ':').replace(': ', ':')
 				if line.startswith('}'):
 					is_struct = False
 					ret[cur_ver]['structs'][cur_struct_name] = cur_struct
