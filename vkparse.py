@@ -451,6 +451,22 @@ def to_rust(outfile, parsed):
 					name, type = process_guts(name, type)
 					f.write(f'\t{name}: {type},\n')
 				f.write('}\n')
+			for struct_name, struct_guts in verdata['structs'].items():
+				has_bitfield = False
+				struct = io.StringIO()
+				struct.write('#[derive(Debug, Clone)]\n')
+				struct.write(f'pub struct {struct_name} {{\n')
+				for name, type in struct_guts.items():
+					name, type = process_guts(name, type)
+					if ':' in name:
+						has_bitfield = True
+						name, bits = name.split(':', 1)
+						struct.write(f'\t#[bits = {bits}]\n');
+					struct.write(f'\t{name}: {type},\n')
+				struct.write('}\n')
+				if has_bitfield:
+					f.write('#[bitfield]\n');
+				f.write(struct.getvalue());
 
 if __name__ == '__main__':
 	parsed = parse('vulkan_core.h')
