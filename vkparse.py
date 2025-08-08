@@ -26,6 +26,7 @@ def parse(input):
 	is_struct = False
 	is_proto = False
 	is_typedef_func = False
+	is_multiline_comment = False
 	cur_func = {}
 	cur_enum = {}
 	cur_union = {}
@@ -66,13 +67,31 @@ def parse(input):
 		'const char*': "&'static str",
 	}
 	enabled = False
+	last_line = ''
 	with open(input, 'r') as f:
 		for line in f:
+			if is_multiline_comment:
+				if '*/' in line:
+					line = line.split('*/', 1)[1].lstrip()
+					is_multiline_comment = False
+				else:
+					continue
+			while '/*' in line:
+				if '*/' in line:
+					left, right = line.split('/*', 1)
+					line = left.rstrip() + ' ' + right.split('*/', 1)[1].lstrip()
+				else:
+					line = line.split('/*', 1)[0].rstrip()
+					is_multiline_comment = True
 			line = line.split('//', 1)[0].rstrip()
-			lline = line.lstrip()
-			indent = len(line) - len(lline)
-			line = lline
+			trimmed_line = line.lstrip()
+			indent = len(line) - len(trimmed_line)
+			line = (last_line + ' ' + trimmed_line).lstrip()
+			last_line = ''
 			if line is None or len(line) == 0:
+				continue
+			if line.endswith('\\'):
+				last_line += line[:-1]
 				continue
 			if line.startswith(('#ifdef ', '#ifndef ')):
 				sharp_if_level += 1
