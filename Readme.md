@@ -5,5 +5,6 @@
 python3 vkparse.py
 ```
 
-It will parse `vulkan_core.h` into `vkcore.json`.
+It will parse `vulkan_core.h` into `vkcore.json`, `vkcore.rs`.
 - `vkcore.json` is for you to parse it into your language.
+- `vkcore.rs` is for Rust.
