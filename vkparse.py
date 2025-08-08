@@ -119,6 +119,29 @@ def parse(input, initial = {}, is_include_header = 0):
 					is_proto = False
 					is_cpp = False
 				continue
+			if line.startswith('#include'):
+				print('\t' * is_include_header + line)
+				if '<' in line or '>' in line:
+					continue
+				include_file = line.split('"', 2)[1]
+				include_path = os.path.dirname(include_file)
+				include_file = os.path.basename(include_file)
+				if include_file == 'vk_platform.h':
+					print('\t' * is_include_header + 'Skipped: "vk_platform.h"')
+					continue
+				with pushd(include_path):
+					ret['metadata'] = {
+						'all_enum': all_enum,
+						'all_const': all_const,
+						'must_alias': must_alias,
+					}
+					parsed = parse(include_file, ret, is_include_header + 1)
+					metadata = parsed['metadata'].copy()
+					del parsed['metadata']
+					ret |= parsed
+					all_enum |= metadata['all_enum']
+					all_const |= metadata['all_const']
+					must_alias |= metadata['must_alias']
 				continue
 			if enabled == False:
 				if line.startswith('#define VK_VERSION_1_0 1'):
