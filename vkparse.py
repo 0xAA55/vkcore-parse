@@ -417,8 +417,7 @@ def to_rust(outfile, parsed):
 				constval, consttype = process_constant_value(value)
 				f.write(f'pub const {constant}: {consttype} = {constval};\n')
 			for type, tname in verdata['typedefs'].items():
-				if tname == 'void*':
-					tname = 'c_void'
+				tname = ctype_to_rust(tname)
 				f.write(f'type {type} = {tname};\n')
 			for handle in verdata['handles']:
 				f.write(f'// Define handle `{handle}`\n')
