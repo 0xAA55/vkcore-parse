@@ -331,6 +331,31 @@ def to_rust(outfile, parsed):
 	all_enum = metadata['all_enum']
 	all_const = metadata['all_const']
 	must_alias = metadata['must_alias']
+	def ctype_to_rust(ctype):
+		ctype = ctype.replace(' *', '*')
+		try:
+			rust = must_alias[ctype]
+			ctype = ''
+		except KeyError:
+			rust = ''
+		while len(ctype):
+			if ctype.endswith('const*'):
+				ctype = ctype[:-len('const*')].rstrip()
+				rust = f'*const {rust}'
+			elif ctype.endswith('*'):
+				if ctype.startswith('const '):
+					ctype = ctype[len('const '):-1]
+					rust = f'*const {rust}'
+				else:
+					ctype = ctype[:-1]
+					rust = f'*mut {rust}'
+			else:
+				if ctype.startswith('struct '):
+					ctype = ctype[len('struct '):].strip()
+				if ctype == 'void': ctype = 'c_void'
+				rust = f'{rust.strip()} {ctype}'.strip()
+				break
+		return rust
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
