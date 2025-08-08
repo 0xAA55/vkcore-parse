@@ -424,6 +424,20 @@ def to_rust(outfile, parsed):
 		except KeyError:
 			pass
 		return type
+	def struct_member_type_process(struct, type):
+		is_pointer = type.startswith(('&', '*'))
+		is_enum = type in all_enum_names
+		if is_pointer:
+			struct.write(f'\t/// Original type: {type}\n');
+			type = 'usize'
+		elif is_enum:
+			struct.write(f'\t/// Original type: {type}\n');
+			type = 'u32'
+		try:
+			type = must_alias[type]
+		except KeyError:
+			pass
+		return type
 	def process_version(verdata, f):
 		for constant, value in verdata['constants'].items():
 			constval, consttype = process_constant_value(value)
