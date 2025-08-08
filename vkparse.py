@@ -580,7 +580,9 @@ def to_rust(outfile, parsed):
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
+		f.write('#![allow(non_snake_case)]\n')
 		f.write('#![allow(non_camel_case_types)]\n')
+		f.write('#![allow(non_upper_case_globals)]\n')
 		f.write('\n')
 		f.write('use std::{\n')
 		f.write('\tffi::c_void,\n')
