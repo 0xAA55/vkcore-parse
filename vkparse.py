@@ -563,6 +563,23 @@ def to_rust(outfile, parsed):
 				f.write(f');\n')
 			else:
 				f.write(f') -> {ctype_to_rust(ret_type)};\n')
+		def to_snake(camel_case):
+			ret = ''
+			uppers = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+			last_is_upper = False
+			for a in camel_case:
+				if a in uppers:
+					if last_is_upper == False:
+						last_is_upper = True
+						ret += f'_{a.lower()}'
+					else:
+						ret += a.lower()
+				else:
+					if last_is_upper == True:
+						last_is_upper = False
+					ret += a
+			while ret[0] == '_': ret = ret[1:]
+			return ret
 		dummys = io.StringIO()
 		traits = io.StringIO()
 		traits.write(f'pub trait {version}: Debug {{')
