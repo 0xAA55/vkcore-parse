@@ -185,6 +185,7 @@ def parse(input, initial = {}, is_include_header = 0):
 					value = value[1:-1]
 				if ident != cur_ver:
 					ret[cur_ver]['constants'][ident] = value
+					all_const |= {ident: value}
 				continue
 			if is_enum:
 				if line.startswith('}'):
