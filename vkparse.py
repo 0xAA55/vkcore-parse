@@ -196,18 +196,6 @@ def parse(input):
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
 					ret[cur_ver]['non_dispatchable_handles'] += [handle_name]
 					continue
-	for ver_name, ver_data in ret.items():
-		for enum, defines in ver_data['enums'].items():
-			to_redirect = {}
-			for name, value in defines.items():
-				if value in all_enum:
-					middle = all_enum[value]
-					if middle not in all_enum:
-						to_redirect[name] = middle
-					else:
-						print(f'`{middle}`')
-			for name, value in to_redirect.items():
-				ret[ver_name]['enums'][enum][name] = value
 	return ret
 
 def to_rust(outfile, parsed):
