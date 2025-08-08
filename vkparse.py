@@ -367,6 +367,39 @@ def to_rust(outfile, parsed):
 			if is_param: type = f'&{type}'
 		if name == 'type': name = f'{name}_'
 		return name, type
+	def process_constant_value(value):
+		while True:
+			try:
+				value = all_const[value]
+			except KeyError:
+				break
+		while True:
+			try:
+				value, source = all_enum[value]
+			except KeyError:
+				break
+		type_ = None
+		value = value.lower()
+		if value.endswith('ull'):
+			type_ = 'u64'
+			value = f'{value[:-3]}u64'
+		elif value.endswith('ll'):
+			type_ = 'i64'
+			value = f'{value[:-2]}i64'
+		elif value.endswith('u'):
+			type_ = 'u32'
+			value = f'{value[:-1]}u32'
+		elif value.endswith('l'):
+			type_ = 'i32'
+			value = f'{value[:-1]}i32'
+		elif value.endswith('f') and '.' in value:
+			type_ = 'f32'
+			value = f'{value[:-1]}f32'
+		if value[0] == '~':
+			value = f'!{value[1:]}'
+		if type_ is None:
+			type_ = 'u32'
+		return value, type_
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
