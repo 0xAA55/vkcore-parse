@@ -201,7 +201,11 @@ def parse(input):
 			to_redirect = {}
 			for name, value in defines.items():
 				if value in all_enum:
-					to_redirect[name] = all_enum[value]
+					middle = all_enum[value]
+					if middle not in all_enum:
+						to_redirect[name] = middle
+					else:
+						print(f'`{middle}`')
 			for name, value in to_redirect.items():
 				ret[ver_name]['enums'][enum][name] = value
 	return ret
