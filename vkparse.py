@@ -205,10 +205,54 @@ def parse(input):
 			for name, value in to_redirect.items():
 				ret[ver_name]['enums'][enum][name] = value
 	return ret
-			
 
+def to_rust(outfile, parsed):
+	with open(outfile, 'w') as f:
+		f.write('\n')
+		f.write('#![allow(dead_code)]\n')
+		f.write('#![allow(non_camel_case_types)]\n')
+		f.write('\n')
+		f.write('use std::{\n')
+		f.write('\tffi::c_void,\n')
+		f.write('};\n')
+		f.write('\n')
+		f.write('type int8_t  = i8;\n')
+		f.write('type int16_t = i16;\n')
+		f.write('type int32_t = i32;\n')
+		f.write('type int64_t = i64;\n')
+		f.write('type uint8_t  = u8;\n')
+		f.write('type uint16_t = u16;\n')
+		f.write('type uint32_t = u32;\n')
+		f.write('type uint64_t = u64;\n')
+		for version, verdata in parsed.items():
+			for type, tname in verdata['typedefs'].items():
+				if tname == 'void*':
+					tname = 'c_void'
+				f.write(f'type {type} = {tname};\n')
+			for handle in verdata['handles']:
+				f.write(f'// Define handle `{handle}`\n')
+				f.write(f'#[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
+				f.write(f'type {handle} = *const {handle}_T;\n')
+			for handle in verdata['non_dispatchable_handles']:
+				f.write(f'// Define non-dispatchable handle `{handle}`\n')
+				f.write(f'#[cfg(target_pointer_width = "32")] type {handle} = u64;\n')
+				f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
+				f.write(f'#[cfg(target_pointer_width = "64")] type {handle} = *const {handle}_T;\n')
+			for enum, enumpair in verdata['enums'].items():
+				f.write(f'pub enum {enum} {{\n')
+				for enumname, enumval in enumpair.items():
+					enumval = enumval.lower()
+					if enumval.endswith('ull'): enumval = f'{enumval[:-3]}u64'
+					if enumval.endswith('ll'): enumval = f'{enumval[:-2]}i64'
+					if enumval.endswith('u'): enumval = f'{enumval[:-1]}u32'
+					if enumval.endswith('l'): enumval = f'{enumval[:-1]}i32'
+					if enumval.endswith('f') and '.' in enumval: enumval = f'{enumval[:-1]}f32'
+					if enumval[0] == '~': enumval = f'!{enumval[1:]}'
+					f.write(f'\t{enumname} = {enumval},\n')
+				f.write('}\n')
 
 if __name__ == '__main__':
 	parsed = parse('vulkan_core.h')
 	with open('vkcore.json', 'w') as f:
 		json.dump(parsed, f, indent=4)
+	to_rust('vkcore.rs', parsed)
