@@ -439,22 +439,31 @@ def to_rust(outfile, parsed):
 			pass
 		return type
 	def process_version(verdata, f):
-		for constant, value in verdata['constants'].items():
+		constants = verdata['constants']
+		typedefs = verdata['typedefs']
+		handles = verdata['handles']
+		non_dispatchable_handles = verdata['non_dispatchable_handles']
+		enums = verdata['enums']
+		unions = verdata['unions']
+		structs = verdata['structs']
+		func_protos = verdata['func_protos']
+		funcs = verdata['funcs']
+		for constant, value in constants.items():
 			constval, consttype = process_constant_value(value)
 			f.write(f'pub const {constant}: {consttype} = {constval};\n')
-		for type, tname in verdata['typedefs'].items():
+		for type, tname in typedefs.items():
 			tname = ctype_to_rust(tname)
 			f.write(f'type {type} = {tname};\n')
-		for handle in verdata['handles']:
+		for handle in handles:
 			f.write(f'// Define handle `{handle}`\n')
 			f.write(f'#[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
 			f.write(f'type {handle} = *const {handle}_T;\n')
-		for handle in verdata['non_dispatchable_handles']:
+		for handle in non_dispatchable_handles:
 			f.write(f'// Define non-dispatchable handle `{handle}`\n')
 			f.write(f'#[cfg(target_pointer_width = "32")] type {handle} = u64;\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{}}\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] type {handle} = *const {handle}_T;\n')
-		for enum, enumpair in verdata['enums'].items():
+		for enum, enumpair in enums.items():
 			already_values = {}
 			asso = io.StringIO()
 			f.write('#[repr(C)]\n')
@@ -479,7 +488,7 @@ def to_rust(outfile, parsed):
 				f.write(asso)
 				f.write('}\n')
 			asso = None
-		for union_name, union_guts in verdata['unions'].items():
+		for union_name, union_guts in unions.items():
 			f.write('#[repr(C)]\n')
 			f.write('#[derive(Clone, Copy)]\n')
 			f.write(f'pub union {union_name} {{\n')
@@ -489,14 +498,14 @@ def to_rust(outfile, parsed):
 			f.write('}\n')
 			f.write(f'impl Debug for {union_name} {{\n')
 			f.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
-			f.write(f'\t\tf.debug_union("{union_name}")\n')
+			f.write(f'\t\tf.debug_struct("{union_name}")\n')
 			for name, type in union_guts.items():
 				name = name.split('[', 1)[0]
 				f.write(f'\t\t.field("{name}", &self.{name})\n')
 			f.write('\t\t.finish()\n')
 			f.write('\t}\n')
 			f.write('}\n')
-		for struct_name, struct_guts in verdata['structs'].items():
+		for struct_name, struct_guts in structs.items():
 			has_bitfield = False
 			num_bitfields = 0
 			last_bits = 0
@@ -542,7 +551,7 @@ def to_rust(outfile, parsed):
 				s_impl.write('}\n')
 			f.write(struct.getvalue());
 			f.write(s_impl.getvalue());
-		for functype_name, func_data in verdata['func_protos'].items():
+		for functype_name, func_data in func_protos.items():
 			f.write(f'type {functype_name} = extern "system" fn(');
 			params = []
 			for param_name, param_type in func_data['params'].items():
