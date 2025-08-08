@@ -457,18 +457,20 @@ def to_rust(outfile, parsed):
 		for enum, enumpair in verdata['enums'].items():
 			already_values = {}
 			asso = io.StringIO()
+			f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
 			f.write(f'pub enum {enum} {{\n')
 			for enumname, enumval in enumpair.items():
 				try:
-					enumdef, enumfrom = all_enum[enumval]
+					enumdef, enumfrom = all_enum_values[enumval]
 					asso.write(f'\tpub const {enumname}: {enumfrom} = {enumfrom}::{enumval};\n')
 				except KeyError:
 					enumval, valtype = process_constant_value(enumval)
-					if enumval in already_values:
-						asso.write(f'\tpub const {enumname}: {enum} = {enum}::{enumval};\n')
-					else:
+					try:
+						enumalias = already_values[enumval]
+						asso.write(f'\tpub const {enumname}: {enum} = {enum}::{enumalias};\n')
+					except KeyError:
 						f.write(f'\t{enumname} = {enumval},\n')
-						already_values |= {enumval}
+						already_values |= {enumval: enumname}
 			f.write('}\n')
 			asso = asso.getvalue()
 			if len(asso):
