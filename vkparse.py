@@ -666,7 +666,7 @@ def to_rust(outfile, parsed):
 		t_impl = io.StringIO()
 		d_impl = io.StringIO()
 		s_impl = io.StringIO()
-		struct_version = f'Vulkan_{version[len("VK_"):]}'
+		struct_version = f'Vulkan_{version.split("_", 1)[-1]}'
 		snake_version = to_snake(version)
 		traits.write(f'pub trait {version}: Debug {{')
 		struct.write(f'#[derive(Debug, Clone, Copy)]\n')
