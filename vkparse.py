@@ -148,7 +148,7 @@ def parse(input, initial = {}, is_include_header = 0):
 					enabled = True
 				else:
 					continue
-			if 'VK_MAKE_API_VERSION' in line:
+			if 'VK_MAKE_' in line and '_VERSION' in line:
 				continue
 			if line.startswith('#include'):
 				continue
