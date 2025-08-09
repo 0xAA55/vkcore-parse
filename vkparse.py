@@ -718,6 +718,11 @@ def to_rust(outfile, parsed):
 				traits.write(';\n')
 				t_impl.write(' {\n')
 				vk_traits.write(' {\n')
+			elif ret_type == 'VkResult':
+				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
+				traits.write(f' -> Result<(), VkResult>;\n')
+				t_impl.write(f' -> Result<(), VkResult> {{\n')
+				vk_traits.write(f' -> Result<(), VkResult> {{\n')
 			else:
 				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
 				traits.write(f' -> {ctype_to_rust(ret_type)};\n')
@@ -725,9 +730,13 @@ def to_rust(outfile, parsed):
 				vk_traits.write(f' -> {ctype_to_rust(ret_type)} {{\n')
 			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL");\n');
 			dummys.write('}\n')
-			t_impl.write(f'\t\t(self.{func_snake})({", ".join(param_call)})\n')
+			if ret_type == 'VkResult':
+				t_impl.write(f'\t\tvk_convert_result((self.{func_snake})({", ".join(param_call)}))\n')
+				vk_traits.write(f'\t\tvk_convert_result((self.{snake_version}.{func_snake})({", ".join(param_call)}))\n')
+			else:
+				t_impl.write(f'\t\t(self.{func_snake})({", ".join(param_call)})\n')
+				vk_traits.write(f'\t\t(self.{snake_version}.{func_snake})({", ".join(param_call)})\n')
 			t_impl.write('\t}\n')
-			vk_traits.write(f'\t\t(self.{snake_version}.{func_snake})({", ".join(param_call)})\n')
 			vk_traits.write('\t}\n')
 			struct.write(f'\t{func_snake}: PFN_{func},\n')
 		traits.write('}\n')
@@ -773,6 +782,13 @@ def to_rust(outfile, parsed):
 		f.write('}\n')
 		f.write('pub fn vk_make_video_std_version(major: u32, minor: u32, patch: u32) -> u32 {\n')
 		f.write('\t(major << 22) | (minor << 12) | patch\n')
+		f.write('}\n')
+		f.write('\n')
+		f.write('pub fn vk_convert_result(result: VkResult) -> Result<(), VkResult> {\n')
+		f.write('\tmatch result {\n')
+		f.write('\t\tVkResult::VK_SUCCESS => Ok(()),\n')
+		f.write('\t\t_ => Err(result),\n')
+		f.write('\t}\n')
 		f.write('}\n')
 		f.write('\n')
 		for version, verdata in parsed.items():
