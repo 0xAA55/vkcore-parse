@@ -822,7 +822,9 @@ def to_rust(outfile, parsed):
 		f.write('#[derive(Debug, Clone)]\n')
 		f.write('pub enum VkError {\n')
 		f.write('\tNullFunctionPointer(&\'static str),\n')
-		for vkresult in vkresult_enum:
+		for vkresult, result_value in vkresult_enum.items():
+			if vkresult == 'VK_SUCCESS': continue
+			if result_value in vkresult_enum: continue
 			f.write(f'\t{to_camel(vkresult, True)}(&\'static str),\n')
 		f.write('\tUnknownError((VkResult, &\'static str)),\n')
 		f.write('}\n')
@@ -832,9 +834,10 @@ def to_rust(outfile, parsed):
 		f.write('pub fn vk_convert_result(function_name: &\'static str, result: VkResult) -> Result<()> {\n')
 		f.write('\tmatch result {\n')
 		f.write('\t\tVkResult::VK_SUCCESS => Ok(()),\n')
-		for vkresult in vkresult_enum:
-			f.write(f'\t\tVkResult::{vkresult} => Err(VkError::{to_camel(vkresult, True)}(function_name)),')
-		f.write('\t\t_ => Err(VkError::UnknownError((result, function_name))),\n')
+		for vkresult, result_value in vkresult_enum.items():
+			if vkresult == 'VK_SUCCESS': continue
+			if result_value in vkresult_enum: continue
+			f.write(f'\t\tVkResult::{vkresult} => Err(VkError::{to_camel(vkresult, True)}(function_name)),\n')
 		f.write('\t}\n')
 		f.write('}\n')
 		f.write('\n')
