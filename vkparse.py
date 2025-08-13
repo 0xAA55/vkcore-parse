@@ -430,14 +430,17 @@ def to_rust(outfile, parsed):
 				break
 		return rust
 	def process_guts(name, type, is_param = False):
+		is_array = False
 		type = ctype_to_rust(type)
 		if type.startswith('const '):
 			type = type[len('const '):]
-		if '[' in name:
+		while '[' in name:
+			is_array = True
 			name, size = name.split('[', 1)
-			size = size.split(']', 1)[0]
+			size, more = size.split(']', 1)
 			type = f'[{type}; {size} as usize]'
-			if is_param: type = f'&{type}'
+			name += more
+		if is_param and is_array: type = f'&{type}'
 		if name == 'type': name = f'{name}_'
 		return name, type
 	def process_constant_value(value):
