@@ -17,6 +17,25 @@ def pushd(new_dir):
 	finally:
 		os.chdir(previous_dir)
 
+def to_snake(camel_case):
+	ret = ''
+	uppers = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+	last_is_upper = False
+	for a in camel_case:
+		if a in uppers:
+			if last_is_upper == False:
+				last_is_upper = True
+				ret += f'_{a.lower()}'
+			else:
+				ret += a.lower()
+		else:
+			if last_is_upper == True:
+				last_is_upper = False
+			ret += a
+	while ret[0] == '_': ret = ret[1:]
+	while '__' in ret: ret = ret.replace('__', '_')
+	return ret
+
 def parse(input, initial = {}, is_include_header = 0):
 	ret = initial
 	cur_ver = ''
@@ -645,24 +664,6 @@ def to_rust(outfile, parsed):
 				f.write(f');\n')
 			else:
 				f.write(f') -> {ctype_to_rust(ret_type)};\n')
-		def to_snake(camel_case):
-			ret = ''
-			uppers = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-			last_is_upper = False
-			for a in camel_case:
-				if a in uppers:
-					if last_is_upper == False:
-						last_is_upper = True
-						ret += f'_{a.lower()}'
-					else:
-						ret += a.lower()
-				else:
-					if last_is_upper == True:
-						last_is_upper = False
-					ret += a
-			while ret[0] == '_': ret = ret[1:]
-			while '__' in ret: ret = ret.replace('__', '_')
-			return ret
 		dummys = io.StringIO()
 		traits = io.StringIO()
 		struct = io.StringIO()
