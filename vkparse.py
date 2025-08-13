@@ -582,9 +582,13 @@ def to_rust(outfile, parsed):
 			f.write(f'pub const {constant}: {consttype} = {constval};\n')
 		for type, tname in typedefs.items():
 			tname = ctype_to_rust(tname)
-			f.write(f'/// type definition `{type}` from {version}\n')
-			if not type.startswith('StdVideo'):
-				f.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{type}.html>\n')
+			if type not in must_alias:
+				f.write(f'/// type definition `{type}` from {version}\n')
+				if not type.startswith('StdVideo'):
+					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{type}.html>\n')
+			else:
+				f.write(f'/// type definition for Rust: `{type}` = `{tname}`\n')
+				f.write(f'/// - Reference: <https://en.cppreference.com/w/cpp/types/integer.html>\n')
 			f.write(f'pub type {type} = {tname};\n')
 		for handle in handles:
 			f.write(f'/// Normal handle `{handle}` from {version}\n')
