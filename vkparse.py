@@ -829,7 +829,7 @@ def to_rust(outfile, parsed):
 		f.write('\n')
 		f.write('type Result<T> = std::result::Result<T, VkError>;\n')
 		f.write('\n')
-		f.write('pub fn vk_convert_result(function_name: &\'str, result: VkResult) -> Result<()> {\n')
+		f.write('pub fn vk_convert_result(function_name: &\'static str, result: VkResult) -> Result<()> {\n')
 		f.write('\tmatch result {\n')
 		f.write('\t\tVkResult::VK_SUCCESS => Ok(()),\n')
 		for vkresult in vkresult_enum:
