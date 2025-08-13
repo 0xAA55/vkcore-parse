@@ -578,7 +578,7 @@ def to_rust(outfile, parsed):
 			constval, consttype = process_constant_value(value)
 			f.write(f'/// constant `{constant}` from {version}\n')
 			if not constant.startswith('StdVideo'):
-				f.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
+				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
 			f.write(f'pub const {constant}: {consttype} = {constval};\n')
 		for type, tname in typedefs.items():
 			tname = ctype_to_rust(tname)
@@ -589,13 +589,13 @@ def to_rust(outfile, parsed):
 		for handle in handles:
 			f.write(f'/// Normal handle `{handle}` from {version}\n')
 			if not handle.startswith('StdVideo'):
-				f.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html>\n')
+				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html>\n')
 			f.write(f'#[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
 			f.write(f'pub type {handle} = *const {handle}_T;\n')
 		for handle in non_dispatchable_handles:
 			f.write(f'/// Non-dispatchable handle `{handle}` from {version}\n')
 			if not handle.startswith('StdVideo'):
-				f.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html\n')
+				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html\n')
 			f.write(f'#[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
@@ -604,7 +604,7 @@ def to_rust(outfile, parsed):
 			asso = io.StringIO()
 			f.write(f'/// enum `{enum}` from {version}\n')
 			if not enum.startswith('StdVideo'):
-				f.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{enum}.html>\n')
+				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{enum}.html>\n')
 			f.write('#[repr(C)]\n')
 			f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
 			f.write(f'pub enum {enum} {{\n')
@@ -630,7 +630,7 @@ def to_rust(outfile, parsed):
 		for union_name, union_guts in unions.items():
 			f.write(f'/// union `{union_name}` from {version}\n')
 			if not union_name.startswith('StdVideo'):
-				f.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{union_name}.html>\n')
+				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{union_name}.html>\n')
 			f.write('#[repr(C)]\n')
 			f.write('#[derive(Clone, Copy)]\n')
 			f.write(f'pub union {union_name} {{\n')
@@ -650,7 +650,7 @@ def to_rust(outfile, parsed):
 		for struct_name, struct_guts in structs.items():
 			f.write(f'/// struct `{struct_name}` from {version}\n')
 			if not struct_name.startswith('StdVideo'):
-				f.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{struct_name}.html>\n')
+				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{struct_name}.html>\n')
 			has_bitfield = False
 			num_bitfields = 0
 			last_bits = 0
@@ -699,7 +699,7 @@ def to_rust(outfile, parsed):
 		for functype_name, func_data in func_protos.items():
 			funcname = functype_name.split('PFN_', 1)[-1]
 			f.write(f'/// function prototype `{functype_name}` from {version}\n')
-			f.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{funcname}.html>\n')
+			f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{funcname}.html>\n')
 			f.write(f'type {functype_name} = extern "system" fn(');
 			params = []
 			for param_name, param_type in func_data['params'].items():
@@ -759,7 +759,7 @@ def to_rust(outfile, parsed):
 				param_call += [param_name]
 			dummys.write(f'/// The dummy function for `{func}` from `{version}`\n')
 			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
-			traits.write(f'/// Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{func}.html>\n')
+			traits.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{func}.html>\n')
 			traits.write(f'\tfn {func}(&self, {", ".join(params)})')
 			t_impl.write(f'\tfn {func}(&self, {", ".join(params)})')
 			vk_traits.write(f'\tfn {func}(&self, {", ".join(params)})')
