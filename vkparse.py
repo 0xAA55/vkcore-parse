@@ -753,9 +753,9 @@ def to_rust(outfile, parsed):
 				vk_traits.write(' {\n')
 			elif ret_type == 'VkResult':
 				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
-				traits.write(f' -> Result<(), VkResult>;\n')
-				t_impl.write(f' -> Result<(), VkResult> {{\n')
-				vk_traits.write(f' -> Result<(), VkResult> {{\n')
+				traits.write(f' -> Result<()>;\n')
+				t_impl.write(f' -> Result<()> {{\n')
+				vk_traits.write(f' -> Result<()> {{\n')
 			else:
 				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
 				traits.write(f' -> {ctype_to_rust(ret_type)};\n')
@@ -792,6 +792,7 @@ def to_rust(outfile, parsed):
 		f.write(t_impl.getvalue())
 		f.write(d_impl.getvalue())
 		f.write(s_impl.getvalue())
+	vkresult_enum = parsed['VK_VERSION_1_0']['enums']['VkResult'];
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
@@ -817,10 +818,23 @@ def to_rust(outfile, parsed):
 		f.write('\t(major << 22) | (minor << 12) | patch\n')
 		f.write('}\n')
 		f.write('\n')
-		f.write('pub fn vk_convert_result(result: VkResult) -> Result<(), VkResult> {\n')
+		f.write('/// The `Result` type for the Vulkan APIs\n')
+		f.write('#[derive(Debug, Clone)]\n')
+		f.write('pub enum VkError {\n')
+		f.write('\tNullFunctionPointer(&\'static str),\n')
+		for vkresult in vkresult_enum:
+			f.write(f'\t{to_camel(vkresult, True)}(&\'static str),\n')
+		f.write('\tUnknownError((VkResult, &\'static str)),\n')
+		f.write('}\n')
+		f.write('\n')
+		f.write('type Result<T> = std::result::Result<T, VkError>;\n')
+		f.write('\n')
+		f.write('pub fn vk_convert_result(function_name: &\'str, result: VkResult) -> Result<()> {\n')
 		f.write('\tmatch result {\n')
 		f.write('\t\tVkResult::VK_SUCCESS => Ok(()),\n')
-		f.write('\t\t_ => Err(result),\n')
+		for vkresult in vkresult_enum:
+			f.write(f'\t\tVkResult::{vkresult} => Err(VkError::{to_camel(vkresult, True)}(function_name)),')
+		f.write('\t\t_ => Err(VkError::UnknownError((result, function_name))),\n')
 		f.write('\t}\n')
 		f.write('}\n')
 		f.write('\n')
