@@ -500,11 +500,17 @@ def to_rust(outfile, parsed):
 	vk_struct = io.StringIO()
 	vk_traits = io.StringIO()
 	vk_s_impl = io.StringIO()
+	vk_struct.write('/// The all-in-one struct for your Vulkan APIs\n')
 	vk_struct.write('#[derive(Default, Debug, Clone)]\n');
 	vk_struct.write('pub struct VkCore {\n');
+	vk_struct.write('\t/// The Vulkan instance\n')
 	vk_struct.write(f'\tpub instance: VkInstance,\n')
+	vk_struct.write('\t/// The Vulkan extension strings\n')
 	vk_struct.write(f'\tpub extensions: BTreeSet<String>,\n')
 	vk_s_impl.write('impl VkCore {\n')
+	vk_struct.write('\t/// Create the all-in-one struct for your Vulkan APIs by a `get_instance_proc_address()` function\n')
+	vk_struct.write('\t/// You have to provide the `VkApplicationInfo` struct to specify your application info\n')
+	vk_struct.write('\t/// You can use `vk_make_version()`/`vk_make_api_version()` from this crate\n')
 	vk_s_impl.write("\tpub fn new(app_info: VkApplicationInfo, mut get_instance_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
 	vk_s_impl.write('\t\tlet vkEnumerateInstanceExtensionProperties = get_instance_proc_address(null(), "vkEnumerateInstanceExtensionProperties");\n')
 	vk_s_impl.write('\t\tif vkEnumerateInstanceExtensionProperties == null() {\n')
@@ -571,6 +577,7 @@ def to_rust(outfile, parsed):
 			f.write(f'pub const {constant}: {consttype} = {constval};\n')
 		for type, tname in typedefs.items():
 			tname = ctype_to_rust(tname)
+			f.write(f'/// type definition `{type}` from {version}\n')
 			f.write(f'pub type {type} = {tname};\n')
 		for handle in handles:
 			f.write(f'/// Normal handle `{handle}` from {version}\n')
@@ -584,6 +591,7 @@ def to_rust(outfile, parsed):
 		for enum, enumpair in enums.items():
 			already_values = {}
 			asso = io.StringIO()
+			f.write(f'/// enum `{enum}` from {version}\n')
 			f.write('#[repr(C)]\n')
 			f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
 			f.write(f'pub enum {enum} {{\n')
@@ -607,6 +615,7 @@ def to_rust(outfile, parsed):
 				f.write('}\n')
 			asso = None
 		for union_name, union_guts in unions.items():
+			f.write(f'/// union `{union_name}` from {version}\n')
 			f.write('#[repr(C)]\n')
 			f.write('#[derive(Clone, Copy)]\n')
 			f.write(f'pub union {union_name} {{\n')
@@ -624,6 +633,7 @@ def to_rust(outfile, parsed):
 			f.write('\t}\n')
 			f.write('}\n')
 		for struct_name, struct_guts in structs.items():
+			f.write(f'/// struct `{struct_name}` from {version}\n')
 			has_bitfield = False
 			num_bitfields = 0
 			last_bits = 0
@@ -670,6 +680,7 @@ def to_rust(outfile, parsed):
 			f.write(struct.getvalue());
 			f.write(s_impl.getvalue());
 		for functype_name, func_data in func_protos.items():
+			f.write(f'/// function prototype `{functype_name}` from {version}\n')
 			f.write(f'type {functype_name} = extern "system" fn(');
 			params = []
 			for param_name, param_type in func_data['params'].items():
@@ -689,13 +700,16 @@ def to_rust(outfile, parsed):
 		s_impl = io.StringIO()
 		struct_version = f'Vulkan_{version.split("_", 1)[-1]}'
 		snake_version = to_snake(version)
+		traits.write(f'/// trait for `{version}`\n')
 		traits.write(f'pub trait {version}: Debug {{')
+		struct.write(f'/// struct for `{version}`\n')
 		struct.write(f'#[derive(Debug, Clone, Copy)]\n')
 		struct.write(f'pub struct {struct_version} {{')
 		t_impl.write(f'impl {version} for {struct_version} {{')
 		d_impl.write(f'impl Default for {struct_version} {{\n')
 		d_impl.write('\tfn default() -> Self {\n')
 		s_impl.write(f'impl {struct_version} {{\n')
+		vk_struct.write(f'\t/// Subset of {version}\n')
 		vk_struct.write(f'\tpub {snake_version}: {struct_version},\n')
 		vk_traits.write(f'impl {version} for VkCore {{')
 		vk_s_impl.write(f'\t\t\t{snake_version}: {struct_version}::new(instance, &mut get_instance_proc_address),\n')
@@ -724,6 +738,7 @@ def to_rust(outfile, parsed):
 				params += [f'{param_name}: {param_type}']
 				params_dummy += [f'_: {param_type}']
 				param_call += [param_name]
+			dummys.write(f'/// The dummy function for `{func}` from `{version}`\n')
 			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
 			traits.write(f'\tfn {func}(&self, {", ".join(params)})')
 			t_impl.write(f'\tfn {func}(&self, {", ".join(params)})')
