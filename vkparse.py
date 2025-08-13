@@ -36,6 +36,23 @@ def to_snake(camel_case):
 	while '__' in ret: ret = ret.replace('__', '_')
 	return ret
 
+def to_camel(snake_case, first_is_upper = False):
+	ret = ''
+	next_should_upper = first_is_upper
+	for a in snake_case.lower():
+		if a == '_':
+			next_should_upper = True
+		elif a.isalpha():
+			if next_should_upper:
+				ret += a.upper()
+				next_should_upper = False
+			else:
+				ret += a
+		else:
+			ret += a
+	return ret
+
+
 def parse(input, initial = {}, is_include_header = 0):
 	ret = initial
 	cur_ver = ''
