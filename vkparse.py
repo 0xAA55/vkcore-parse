@@ -574,6 +574,7 @@ def to_rust(outfile, parsed):
 		funcs = verdata['funcs']
 		for constant, value in constants.items():
 			constval, consttype = process_constant_value(value)
+			f.write(f'/// constant `{constant}` from {version}\n')
 			f.write(f'pub const {constant}: {consttype} = {constval};\n')
 		for type, tname in typedefs.items():
 			tname = ctype_to_rust(tname)
@@ -809,12 +810,15 @@ def to_rust(outfile, parsed):
 		f.write('\tptr::{null, null_mut},\n')
 		f.write('};\n')
 		f.write('\n')
+		f.write('/// Make a version value\n')
 		f.write('pub fn vk_make_version(major: u32, minor: u32, patch: u32) -> u32 {\n')
 		f.write('\t(major << 22) | (minor << 12) | patch\n')
 		f.write('}\n')
+		f.write('/// Make an API version value\n')
 		f.write('pub fn vk_make_api_version(variant: u32, major: u32, minor: u32, patch: u32) -> u32 {\n')
 		f.write('\t(variant << 29) | (major << 22) | (minor << 12) | patch\n')
 		f.write('}\n')
+		f.write('/// Make a video standard version value\n')
 		f.write('pub fn vk_make_video_std_version(major: u32, minor: u32, patch: u32) -> u32 {\n')
 		f.write('\t(major << 22) | (minor << 12) | patch\n')
 		f.write('}\n')
