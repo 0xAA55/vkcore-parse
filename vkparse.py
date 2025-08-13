@@ -720,6 +720,8 @@ def to_rust(outfile, parsed):
 		struct_version = f'Vulkan_{version.split("_", 1)[-1]}'
 		snake_version = to_snake(version)
 		traits.write(f'/// trait for `{version}`\n')
+		if not version.startswith('StdVideo'):
+			traits.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{version}.html>\n')
 		traits.write(f'pub trait {version}: Debug {{')
 		struct.write(f'/// struct for `{version}`\n')
 		struct.write(f'#[derive(Debug, Clone, Copy)]\n')
