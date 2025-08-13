@@ -573,11 +573,11 @@ def to_rust(outfile, parsed):
 			tname = ctype_to_rust(tname)
 			f.write(f'pub type {type} = {tname};\n')
 		for handle in handles:
-			f.write(f'// Define handle `{handle}`\n')
+			f.write(f'/// Normal handle `{handle}` from {version}\n')
 			f.write(f'#[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
 			f.write(f'pub type {handle} = *const {handle}_T;\n')
 		for handle in non_dispatchable_handles:
-			f.write(f'// Define non-dispatchable handle `{handle}`\n')
+			f.write(f'/// Non-dispatchable handle `{handle}` from {version}\n')
 			f.write(f'#[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
 			f.write(f'#[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
