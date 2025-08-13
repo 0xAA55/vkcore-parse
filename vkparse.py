@@ -881,6 +881,18 @@ def to_rust(outfile, parsed):
 		f.write('\t}\n')
 		f.write('}\n')
 		f.write('\n')
+		f.write('impl From<VkError> for VkResult {\n')
+		f.write('\tfn from(val: VkError) -> Self {\n')
+		f.write('\t\tmatch val {\n')
+		for vkresult, result_value in vkresult_enum.items():
+			if vkresult == 'VK_SUCCESS': continue
+			if result_value in vkresult_enum: continue
+			f.write(f'\t\t\tVkError::{to_camel(vkresult, True)}(_) => VkResult::{vkresult},\n')
+		f.write('\t\t\t_ => panic!("No `VkResult` value to `{val:?}`"),\n')
+		f.write('\t\t}\n')
+		f.write('\t}\n')
+		f.write('}\n')
+		f.write('\n')
 		for version, verdata in parsed.items():
 			if version == 'metadata':
 				continue
