@@ -761,7 +761,7 @@ def to_rust(outfile, parsed):
 				traits.write(f' -> {ctype_to_rust(ret_type)};\n')
 				t_impl.write(f' -> {ctype_to_rust(ret_type)} {{\n')
 				vk_traits.write(f' -> {ctype_to_rust(ret_type)} {{\n')
-			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL");\n');
+			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL")\n');
 			dummys.write('}\n')
 			if ret_type == 'VkResult':
 				t_impl.write(f'\t\tvk_convert_result((self.{func_snake})({", ".join(param_call)}))\n')
