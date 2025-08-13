@@ -505,8 +505,8 @@ def to_rust(outfile, parsed):
 	vk_struct.write(f'\tpub instance: VkInstance,\n')
 	vk_struct.write(f'\tpub extensions: BTreeSet<String>,\n')
 	vk_s_impl.write('impl VkCore {\n')
-	vk_s_impl.write("\tpub fn new(app_info: VkApplicationInfo, mut get_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
-	vk_s_impl.write('\t\tlet vkEnumerateInstanceExtensionProperties = get_proc_address(null(), "vkEnumerateInstanceExtensionProperties");\n')
+	vk_s_impl.write("\tpub fn new(app_info: VkApplicationInfo, mut get_instance_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
+	vk_s_impl.write('\t\tlet vkEnumerateInstanceExtensionProperties = get_instance_proc_address(null(), "vkEnumerateInstanceExtensionProperties");\n')
 	vk_s_impl.write('\t\tif vkEnumerateInstanceExtensionProperties == null() {\n')
 	vk_s_impl.write('\t\t\tpanic!("Initialize Vulkan failed: couldn\'t get the address of `vkEnumerateInstanceExtensionProperties()`");\n')
 	vk_s_impl.write('\t\t}\n')
@@ -541,7 +541,7 @@ def to_rust(outfile, parsed):
 	vk_s_impl.write('\t\t\tenabledExtensionCount: count,\n')
 	vk_s_impl.write('\t\t\tppEnabledExtensionNames: ext_pointers.as_ptr()\n')
 	vk_s_impl.write('\t\t};\n')
-	vk_s_impl.write('\t\tlet vkCreateInstance = get_proc_address(null(), "vkCreateInstance");\n')
+	vk_s_impl.write('\t\tlet vkCreateInstance = get_instance_proc_address(null(), "vkCreateInstance");\n')
 	vk_s_impl.write('\t\tif vkCreateInstance == null() {\n')
 	vk_s_impl.write('\t\t\tpanic!("Initialize Vulkan failed: couldn\'t get a valid `vkCreateInstance()` function pointer.")\n')
 	vk_s_impl.write('\t\t}\n')
@@ -698,18 +698,18 @@ def to_rust(outfile, parsed):
 		s_impl.write(f'impl {struct_version} {{\n')
 		vk_struct.write(f'\tpub {snake_version}: {struct_version},\n')
 		vk_traits.write(f'impl {version} for VkCore {{')
-		vk_s_impl.write(f'\t\t\t{snake_version}: {struct_version}::new(instance, &mut get_proc_address),\n')
+		vk_s_impl.write(f'\t\t\t{snake_version}: {struct_version}::new(instance, &mut get_instance_proc_address),\n')
 		snakes = {}
 		if len(funcs):
 			traits.write('\n')
 			vk_traits.write('\n')
-			s_impl.write("\tpub fn new(instance: VkInstance, mut get_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
+			s_impl.write("\tpub fn new(instance: VkInstance, mut get_instance_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
 			s_impl.write('\t\tSelf {\n')
 			d_impl.write('\t\tSelf {\n')
 			t_impl.write('\n')
 			struct.write('\n')
 		else:
-			s_impl.write("\tpub fn new(_instance: VkInstance, _get_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
+			s_impl.write("\tpub fn new(_instance: VkInstance, _get_instance_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
 			s_impl.write('\t\tSelf {')
 			d_impl.write('\t\tSelf {')
 		for func in funcs:
@@ -729,7 +729,7 @@ def to_rust(outfile, parsed):
 			t_impl.write(f'\tfn {func}(&self, {", ".join(params)})')
 			vk_traits.write(f'\tfn {func}(&self, {", ".join(params)})')
 			d_impl.write(f'\t\t\t{func_snake}: dummy_{func},\n');
-			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_proc_address(instance, "{func}"); if proc == null() {{dummy_{func}}} else {{unsafe {{transmute(proc)}}}}}},\n')
+			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_instance_proc_address(instance, "{func}"); if proc == null() {{dummy_{func}}} else {{unsafe {{transmute(proc)}}}}}},\n')
 			ret_type = func_data["ret_type"]
 			if ret_type == 'void':
 				dummys.write(' {\n')
