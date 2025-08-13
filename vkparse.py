@@ -436,10 +436,9 @@ def to_rust(outfile, parsed):
 			type = type[len('const '):]
 		while '[' in name:
 			is_array = True
-			name, size = name.split('[', 1)
-			size, more = size.split(']', 1)
+			name, size = name.rsplit('[', 1)
+			size = size.split(']', 1)[0]
 			type = f'[{type}; {size} as usize]'
-			name += more
 		if is_param and is_array: type = f'&{type}'
 		if name == 'type': name = f'{name}_'
 		return name, type
