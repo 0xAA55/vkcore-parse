@@ -764,8 +764,8 @@ def to_rust(outfile, parsed):
 			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL")\n');
 			dummys.write('}\n')
 			if ret_type == 'VkResult':
-				t_impl.write(f'\t\tvk_convert_result((self.{func_snake})({", ".join(param_call)}))\n')
-				vk_traits.write(f'\t\tvk_convert_result((self.{snake_version}.{func_snake})({", ".join(param_call)}))\n')
+				t_impl.write(f'\t\tvk_convert_result("{func}", (self.{func_snake})({", ".join(param_call)}))\n')
+				vk_traits.write(f'\t\tvk_convert_result("{func}", (self.{snake_version}.{func_snake})({", ".join(param_call)}))\n')
 			else:
 				t_impl.write(f'\t\t(self.{func_snake})({", ".join(param_call)})\n')
 				vk_traits.write(f'\t\t(self.{snake_version}.{func_snake})({", ".join(param_call)})\n')
