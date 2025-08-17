@@ -516,7 +516,7 @@ def to_rust(outfile, parsed):
 	vk_s_impl.write("\tpub fn new(app_info: VkApplicationInfo, mut get_instance_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
 	vk_s_impl.write('\t\tlet vkEnumerateInstanceExtensionProperties = get_instance_proc_address(null(), "vkEnumerateInstanceExtensionProperties");\n')
 	vk_s_impl.write('\t\tif vkEnumerateInstanceExtensionProperties == null() {\n')
-	vk_s_impl.write('\t\t\tpanic!("Initialize Vulkan failed: couldn\'t get the address of `vkEnumerateInstanceExtensionProperties()`");\n')
+	vk_s_impl.write('\t\t\tpanic_any(VkError::NullFunctionPointer("vkEnumerateInstanceExtensionProperties"));\n')
 	vk_s_impl.write('\t\t}\n')
 	vk_s_impl.write('\t\tlet vkEnumerateInstanceExtensionProperties: PFN_vkEnumerateInstanceExtensionProperties = unsafe{transmute(vkEnumerateInstanceExtensionProperties)};\n')
 	vk_s_impl.write('\t\tlet mut count: u32 = 0;\n')
@@ -551,7 +551,7 @@ def to_rust(outfile, parsed):
 	vk_s_impl.write('\t\t};\n')
 	vk_s_impl.write('\t\tlet vkCreateInstance = get_instance_proc_address(null(), "vkCreateInstance");\n')
 	vk_s_impl.write('\t\tif vkCreateInstance == null() {\n')
-	vk_s_impl.write('\t\t\tpanic!("Initialize Vulkan failed: couldn\'t get a valid `vkCreateInstance()` function pointer.")\n')
+	vk_s_impl.write('\t\t\tpanic_any(VkError::NullFunctionPointer("vkCreateInstance"))\n')
 	vk_s_impl.write('\t\t}\n')
 	vk_s_impl.write('\t\tlet vkCreateInstance: PFN_vkCreateInstance = unsafe{transmute(vkCreateInstance)};\n')
 	vk_s_impl.write('\t\tlet mut instance: VkInstance = null();\n')
@@ -787,7 +787,7 @@ def to_rust(outfile, parsed):
 				traits.write(f' -> Result<{ctype_to_rust(ret_type)}>;\n')
 				t_impl.write(f' -> Result<{ctype_to_rust(ret_type)}> {{\n')
 				vk_traits.write(f' -> Result<{ctype_to_rust(ret_type)}> {{\n')
-			dummys.write(f'\tpanic!("Vulkan function pointer of `{func}()` is NULL")\n');
+			dummys.write(f'\tpanic_any(VkError::NullFunctionPointer("{func}"))\n');
 			dummys.write('}\n')
 			if ret_type == 'VkResult':
 				t_impl.write(f'\t\tconvert_result("{func}", catch_unwind(||((self.{func_snake})({", ".join(param_call)}))))\n')
