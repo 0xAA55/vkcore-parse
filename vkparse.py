@@ -729,6 +729,8 @@ def to_rust(outfile, parsed):
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.{name})))\n')
 					elif type.startswith('[i8; '):
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", maybe_string(&self.{name})))\n')
+					elif type.startswith('[u8; '):
+						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", to_byte_array_string(&self.{name})))\n')
 					else:
 						d_impl.write(f'\t\t.field("{name}", &self.{name})\n')
 			if last_bits:
@@ -891,11 +893,15 @@ def to_rust(outfile, parsed):
 		f.write('\t(major << 22) | (minor << 12) | patch\n')
 		f.write('}\n')
 		f.write('\n')
+		f.write('fn to_byte_array_string<const N: usize>(input: &[u8; N]) -> String {\n')
+		f.write('\tformat!("[{}]", input.iter().map(|b|format!("0x{b:02X}")).collect::<Vec<String>>().join(", "))\n')
+		f.write('}\n')
+		f.write('\n')
 		f.write('/// Convert a fixed-length `i8` array to a Rust string if it is a UTF-8 string; otherwise, return the hexadecimal sequences of the byte array\n')
 		f.write('fn maybe_string<const N: usize>(input: &[i8; N]) -> String {\n')
 		f.write('\tmatch unsafe{CStr::from_ptr(input.as_ptr())}.to_str() {\n')
 		f.write('\t\tOk(s) => s.to_owned(),\n')
-		f.write('\t\tErr(_) => format!("[{}]", input.iter().map(|b|format!("0x{:02X}", *b as u8)).collect::<Vec<String>>().join(", ")),\n')
+		f.write('\t\tErr(_) => to_byte_array_string::<N>(unsafe{transmute(input)}),\n')
 		f.write('\t}\n')
 		f.write('}\n')
 		f.write('\n')
