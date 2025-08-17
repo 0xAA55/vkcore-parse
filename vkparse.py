@@ -590,6 +590,23 @@ def to_rust(outfile, parsed):
 				f.write(f'/// type definition for Rust: `{type}` = `{tname}`\n')
 				f.write(f'/// - Reference: <https://en.cppreference.com/w/cpp/types/integer.html>\n')
 			f.write(f'pub type {type} = {tname};\n')
+			if type[-1] == 's':
+				enumbf_type = f'{type[:-1]}Bits'
+				try:
+					enumbf_data = enums[enumbf_type]
+				except KeyError:
+					enumbf_type = None
+			else:
+				enumbf_type = None
+			if enumbf_type is not None:
+				f.write(f'pub fn {to_snake(type)}_to_string(value: {type}) -> String {{\n')
+				f.write(f'\tlet mut flags = Vec::<&str>::with_capacity({len(enumbf_data)});\n')
+				for enum_string in enumbf_data:
+					f.write(f'\tif (value & {enumbf_type}::{enum_string} as {type}) == {enumbf_type}::{enum_string} as {type} {{\n')
+					f.write(f'\t\tflags.push("{enumbf_type}::{enum_string}");\n')
+					f.write('\t}\n')
+				f.write(f'\tflags.join(" | ")\n')
+				f.write('}\n')
 		for handle in handles:
 			f.write(f'/// Normal handle `{handle}` from {version}\n')
 			if not handle.startswith('StdVideo'):
@@ -660,11 +677,23 @@ def to_rust(outfile, parsed):
 			last_bits = 0
 			struct = io.StringIO()
 			s_impl = io.StringIO()
+			d_impl = io.StringIO()
 			struct.write('#[repr(C)]\n')
-			struct.write('#[derive(Debug, Clone, Copy)]\n')
+			struct.write('#[derive(Clone, Copy)]\n')
 			struct.write(f'pub struct {struct_name} {{\n')
+			d_impl.write(f'impl Debug for {struct_name} {{\n')
+			d_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
+			d_impl.write(f'\t\tf.debug_struct("{struct_name}")\n')
 			for name, type in struct_guts.items():
 				name, type = process_guts(name, type)
+				if type[-1] == 's':
+					enumbf_type = f'{type[:-1]}Bits'
+					try:
+						enumbf_pairs = enums[enumbf_type]
+					except KeyError:
+						enumbf_type = None
+				else:
+					enumbf_type = None
 				if ':' in name:
 					if has_bitfield == False:
 						has_bitfield = True
@@ -680,6 +709,10 @@ def to_rust(outfile, parsed):
 					s_impl.write(f'\tpub fn set_{name}(&mut self, value: u32) {{\n')
 					s_impl.write(f'\t\tself.{bf_name} = (value & {hex((1 << bits) - 1)}) << {last_bits};\n')
 					s_impl.write('\t}\n')
+					if enumbf_type is not None:
+						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.get_{name}())))\n')
+					else:
+						d_impl.write(f'\t\t.field("{name}", &self.get_{name}())\n')
 					last_bits += bits
 					last_bits %= 32
 					if last_bits == 0:
@@ -692,14 +725,22 @@ def to_rust(outfile, parsed):
 						num_bitfields += 1
 						last_bits = 0;
 					struct.write(f'\tpub {name}: {type},\n')
+					if enumbf_type is not None:
+						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.{name})))\n')
+					else:
+						d_impl.write(f'\t\t.field("{name}", &self.{name})\n')
 			if last_bits:
 				bf_name = f'bitfield{num_bitfields}'
 				struct.write(f'\tpub {bf_name}: u32,\n')
 			struct.write('}\n')
 			if has_bitfield:
 				s_impl.write('}\n')
+			d_impl.write('\t\t.finish()\n')
+			d_impl.write('\t}\n')
+			d_impl.write('}\n')
 			f.write(struct.getvalue());
 			f.write(s_impl.getvalue());
+			f.write(d_impl.getvalue());
 		for functype_name, func_data in func_protos.items():
 			funcname = functype_name.split('PFN_', 1)[-1]
 			f.write(f'/// function prototype `{functype_name}` from {version}\n')
