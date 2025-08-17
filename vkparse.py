@@ -727,6 +727,8 @@ def to_rust(outfile, parsed):
 					struct.write(f'\tpub {name}: {type},\n')
 					if enumbf_type is not None:
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.{name})))\n')
+					elif type.startswith('[i8; '):
+						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", maybe_string(&self.{name})))\n')
 					else:
 						d_impl.write(f'\t\t.field("{name}", &self.{name})\n')
 			if last_bits:
@@ -889,6 +891,14 @@ def to_rust(outfile, parsed):
 		f.write('\t(major << 22) | (minor << 12) | patch\n')
 		f.write('}\n')
 		f.write('\n')
+		f.write('/// Convert a fixed-length `i8` array to a Rust string if it is a UTF-8 string; otherwise, return the hexadecimal sequences of the byte array\n')
+		f.write('fn maybe_string<const N: usize>(input: &[i8; N]) -> String {\n')
+		f.write('\tmatch unsafe{CStr::from_ptr(input.as_ptr())}.to_str() {\n')
+		f.write('\t\tOk(s) => s.to_owned(),\n')
+		f.write('\t\tErr(_) => format!("[{}]", input.iter().map(|b|format!("0x{b:02X}")).collect::<Vec<String>>().join(", ")),\n')
+		f.write('\t}\n')
+		f.write('}\n')
+		f.write('\n')
 		f.write('/// The `Result` type for the Vulkan APIs\n')
 		f.write('#[derive(Debug, Clone)]\n')
 		f.write('pub enum VkError {\n')
@@ -900,6 +910,7 @@ def to_rust(outfile, parsed):
 		f.write('\tUnknownError((VkResult, &\'static str)),\n')
 		f.write('}\n')
 		f.write('\n')
+		f.write('/// Our result type for all of the Vulkan function wrappers\n')
 		f.write('type Result<T> = std::result::Result<T, VkError>;\n')
 		f.write('\n')
 		f.write('/// Translate the returned `Result<T>` from `std::panic::catch_unwind()` to our `Result<T>`\n')
@@ -916,6 +927,7 @@ def to_rust(outfile, parsed):
 		f.write('\t}\n')
 		f.write('}\n')
 		f.write('\n')
+		f.write('/// Convert a result returned from `std::panic::catch_unwind()` with `VkResult` to our `Result<()>` \n')
 		f.write('fn convert_result(function_name: &\'static str, result: std::thread::Result<VkResult>) -> Result<()> {\n')
 		f.write('\tif let Ok(result) = result {\n')
 		f.write('\t\tmatch result {\n')
