@@ -895,7 +895,7 @@ def to_rust(outfile, parsed):
 		f.write('fn maybe_string<const N: usize>(input: &[i8; N]) -> String {\n')
 		f.write('\tmatch unsafe{CStr::from_ptr(input.as_ptr())}.to_str() {\n')
 		f.write('\t\tOk(s) => s.to_owned(),\n')
-		f.write('\t\tErr(_) => format!("[{}]", input.iter().map(|b|format!("0x{b:02X}")).collect::<Vec<String>>().join(", ")),\n')
+		f.write('\t\tErr(_) => format!("[{}]", input.iter().map(|b|format!("0x{:02X}", *b as u8)).collect::<Vec<String>>().join(", ")),\n')
 		f.write('\t}\n')
 		f.write('}\n')
 		f.write('\n')
