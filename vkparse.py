@@ -684,6 +684,7 @@ def to_rust(outfile, parsed):
 			d_impl.write(f'impl Debug for {struct_name} {{\n')
 			d_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
 			d_impl.write(f'\t\tf.debug_struct("{struct_name}")\n')
+			have_special_fields = False
 			for name, type in struct_guts.items():
 				name, type = process_guts(name, type)
 				if type[-1] == 's':
@@ -711,6 +712,7 @@ def to_rust(outfile, parsed):
 					s_impl.write('\t}\n')
 					if enumbf_type is not None:
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.get_{name}())))\n')
+						have_special_fields = True
 					else:
 						d_impl.write(f'\t\t.field("{name}", &self.get_{name}())\n')
 					last_bits += bits
@@ -727,10 +729,13 @@ def to_rust(outfile, parsed):
 					struct.write(f'\tpub {name}: {type},\n')
 					if enumbf_type is not None:
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.{name})))\n')
+						have_special_fields = True
 					elif type.startswith('[i8; '):
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", maybe_string(&self.{name})))\n')
+						have_special_fields = True
 					elif type.startswith('[u8; '):
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", to_byte_array_string(&self.{name})))\n')
+						have_special_fields = True
 					else:
 						d_impl.write(f'\t\t.field("{name}", &self.{name})\n')
 			if last_bits:
@@ -742,9 +747,13 @@ def to_rust(outfile, parsed):
 			d_impl.write('\t\t.finish()\n')
 			d_impl.write('\t}\n')
 			d_impl.write('}\n')
-			f.write(struct.getvalue());
-			f.write(s_impl.getvalue());
-			f.write(d_impl.getvalue());
+			if have_special_fields:
+				f.write(struct.getvalue());
+				f.write(s_impl.getvalue());
+				f.write(d_impl.getvalue());
+			else:
+				f.write(struct.getvalue().replace('#[derive(Clone, Copy)]', '#[derive(Debug, Clone, Copy)]'));
+				f.write(s_impl.getvalue());
 		for functype_name, func_data in func_protos.items():
 			funcname = functype_name.split('PFN_', 1)[-1]
 			f.write(f'/// function prototype `{functype_name}` from {version}\n')
