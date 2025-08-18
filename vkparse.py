@@ -350,6 +350,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 				if is_typedef_func == False:
 					ret[cur_ver]['func_protos'][cur_func_name] = cur_func.copy()
 					cur_func = {}
+				continue
 			else:
 				if line.startswith('typedef enum '):
 					is_enum = True
@@ -419,6 +420,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 					else:
 						print(echo_indent, end='')
 						print(f'Unknown struct at line {line_no}: {line}')
+					continue
 				if line.startswith('VK_DEFINE_HANDLE'):
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
 					ret[cur_ver]['handles'] += [handle_name]
@@ -427,6 +429,8 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
 					ret[cur_ver]['non_dispatchable_handles'] += [handle_name]
 					continue
+				print(echo_indent, end='')
+				print(f'Unknown line {line_no}: {line}')
 	ret['metadata'] = {
 		'all_enum_names': list(all_enum_names),
 		'all_enum_values': all_enum_values,
