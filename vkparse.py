@@ -241,7 +241,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 				continue
 			if line.startswith('#define ') and line.endswith('_H_ 1'):
 				print(echo_indent, end='')
-				print(line)
+				print(f'Version: {line}')
 				continue
 			if cur_ver == '':
 				print(echo_indent, end='')
