@@ -52,6 +52,14 @@ def to_camel(snake_case, first_is_upper = False):
 			ret += a
 	return ret
 
+def is_good_identifier(text):
+	bad_in_identifier = ' !"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~'
+	if text[0].isnumeric():
+		return False
+	for ch in bad_in_identifier:
+		if ch in text:
+			return False
+	return True
 
 def parse(input, initial = {}, is_include_header = 0):
 	ret = initial
