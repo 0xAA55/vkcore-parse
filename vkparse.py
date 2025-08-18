@@ -221,6 +221,7 @@ def parse(input, initial = {}, is_include_header = 0):
 					'handles': [],
 					'non_dispatchable_handles': [],
 					'constants': {},
+					'typed_constants': {},
 					'enums': {},
 					'unions': {},
 					'structs': {},
