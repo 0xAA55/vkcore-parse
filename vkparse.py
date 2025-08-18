@@ -349,10 +349,16 @@ def parse(input, initial = {}, is_include_header = 0):
 					cur_union = {}
 					continue
 				if line.startswith('typedef struct '):
-					is_struct = True
-					cur_struct_name = line[len('typedef struct '):].split(' ', 1)[0]
-					cur_struct = {}
-					all_struct_names |= {cur_enum_name}
+					if line[-1] == ';' and '{' not in line and '*' in line:
+						handle_name = line.rsplit(' ', 1)[-1][:-1].strip()
+						ret[cur_ver]['handles'] += [handle_name]
+						print(echo_indent, end='')
+						print(f'Parse `{line}` as handle definition: {handle_name}')
+					else:
+						is_struct = True
+						cur_struct = {}
+						cur_struct_name = line[len('typedef struct '):].split(' ', 1)[0]
+						all_struct_names |= {cur_struct_name}
 					continue
 				if line.startswith('typedef '):
 					if 'VKAPI_PTR' in line:
