@@ -298,7 +298,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 					all_enum_values |= {name.strip(): [value.strip(), cur_enum_name]}
 				else:
 					print(echo_indent, end='')
-					print(f'Unknown data in enum: "{line}"')
+					print(f'Unknown data in enum at line {line_no}: {line}')
 				continue
 			elif is_union:
 				if line.startswith('}'):
@@ -312,7 +312,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 					cur_union |= {name.strip(): type.strip()}
 				else:
 					print(echo_indent, end='')
-					print(f'Unknown data in union: "{line}"')
+					print(f'Unknown data in union at line {line_no}: {line}')
 				continue
 			elif is_struct:
 				while ' :' in line or ': ' in line:
@@ -328,7 +328,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 					cur_struct |= {name.strip(): type.strip()}
 				else:
 					print(echo_indent, end='')
-					print(f'Unknown data in struct: "{line}"')
+					print(f'Unknown data in struct at line {line_no}: {line}')
 				continue
 			elif is_proto:
 				if line.startswith('VKAPI_ATTR '):
@@ -336,7 +336,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 						ret[cur_ver]['funcs'] += [line[:-1].rsplit(' ', 1)[-1]]
 					else:
 						print(echo_indent, end='')
-						print(f'Unknown data in function declaration: "{line}"')
+						print(f'Unknown data in function declaration at line {line_no}: {line}')
 				continue
 			elif is_typedef_func:
 				if line.endswith(');'):
@@ -392,7 +392,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 									params |= {f'_param_{params.len()}': type.strip()}
 						else:
 							print(echo_indent, end='')
-							print(f'Unknown data in function prototype: "{line}"')
+							print(f'Unknown data in function prototype at line {line_no}: {line}')
 							continue
 						cur_func = {
 							'ret_type': line[len('typedef '):].split('(', 1)[0].strip(),
@@ -408,7 +408,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 							ret[cur_ver]['typedefs'] |= {name: type}
 						else:
 							print(echo_indent, end='')
-							print(f'Unknown data in typedef: "{line}"')
+							print(f'Unknown data in typedef at line {line_no}: {line}')
 					continue
 				if line.startswith('struct ') and line[-1] == ';':
 					identifier = line[len('struct '):-1]
@@ -418,7 +418,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 						ret[cur_ver]['handles'] += [identifier]
 					else:
 						print(echo_indent, end='')
-						print(f'Unknown struct: {line}')
+						print(f'Unknown struct at line {line_no}: {line}')
 				if line.startswith('VK_DEFINE_HANDLE'):
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
 					ret[cur_ver]['handles'] += [handle_name]
