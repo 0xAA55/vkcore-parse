@@ -130,7 +130,9 @@ def parse(input, initial = {}, is_include_header = 0):
 	last_line = ''
 	echo_indent = '    ' * is_include_header
 	with open(input, 'r') as f:
+		line_no = 0
 		for line in f:
+			line_no += 1
 			if is_multiline_comment:
 				if '*/' in line:
 					line = line.split('*/', 1)[1].lstrip()
