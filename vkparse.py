@@ -73,6 +73,7 @@ def parse(input, initial = {}, is_include_header = 0):
 	is_typedef_func = False
 	is_multiline_comment = False
 	macro_conditions = []
+	macro_isprotos = []
 	cur_func = {}
 	cur_enum = {}
 	cur_union = {}
@@ -160,6 +161,7 @@ def parse(input, initial = {}, is_include_header = 0):
 			if line.startswith(('#if ', '#ifdef ', '#ifndef ')):
 				sharp_if_level += 1
 				macro_conditions += [is_unwanted]
+				macro_isprotos += [is_proto]
 				if line.startswith('#ifndef VK_NO_PROTOTYPES'):
 					is_proto = True
 				elif line.startswith(('#ifdef __cplusplus', '#ifdef __OBJC__')):
@@ -167,10 +169,11 @@ def parse(input, initial = {}, is_include_header = 0):
 				continue
 			if line.startswith("#else"):
 				is_unwanted = not is_unwanted
+				is_proto = not is_proto
 				continue
 			if line.startswith('#endif'):
 				sharp_if_level -= 1
-				is_proto = False
+				is_proto = macro_isprotos.pop()
 				is_unwanted = macro_conditions.pop()
 				continue
 			if line.startswith('#include'):
