@@ -624,6 +624,17 @@ def to_rust(outfile, parsed):
 		structs = verdata['structs']
 		func_protos = verdata['func_protos']
 		funcs = verdata['funcs']
+		try:
+			feature = verdata['feature']
+			feature_inline = f'#[cfg(feature = "{feature}")]'
+			feature = f'{feature_inline}\n'
+			feature_indent = f'\t{feature}'
+			feature_indent_3 = f'\t\t\t{feature}'
+		except KeyError:
+			feature_inline = ''
+			feature = ''
+			feature_indent = ''
+			feature_indent_3 = ''
 		def is_bitfield_enum(typename):
 			nonlocal enums
 			suffix = ''
@@ -646,6 +657,7 @@ def to_rust(outfile, parsed):
 			f.write(f'/// constant `{constant}` from {version}\n')
 			if not constant.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
+			f.write(feature)
 			f.write(f'pub const {constant}: {consttype} = {constval};\n')
 		for constant, (value) in typed_constants.items():
 			constval, consttype = value
@@ -653,6 +665,7 @@ def to_rust(outfile, parsed):
 			f.write(f'/// constant `{constant}` from {version}\n')
 			if not constant.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
+			f.write(feature)
 			f.write(f'pub const {constant}: {consttype} = {constval};\n')
 		for type, tname in typedefs.items():
 			tname = ctype_to_rust(tname)
@@ -664,9 +677,11 @@ def to_rust(outfile, parsed):
 				f.write(f'/// type definition for Rust: `{type}` = `{tname}`\n')
 				f.write(f'/// - Reference: <https://en.cppreference.com/w/cpp/types/integer.html>\n')
 			if is_good_identifier(type):
+				f.write(feature)
 				f.write(f'pub type {type} = {tname};\n')
 			enumbf_type, enumbf_data = is_bitfield_enum(type)
 			if enumbf_type is not None:
+				f.write(feature)
 				f.write(f'pub fn {to_snake(type)}_to_string(value: {type}) -> String {{\n')
 				f.write(f'\tlet mut flags = Vec::<&str>::with_capacity({len(enumbf_data)});\n')
 				for enum_string in enumbf_data:
@@ -679,21 +694,22 @@ def to_rust(outfile, parsed):
 			f.write(f'/// Normal handle `{handle}` from {version}\n')
 			if not handle.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html>\n')
-			f.write(f'#[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
-			f.write(f'pub type {handle} = *const {handle}_T;\n')
+			f.write(f'{feature_inline} #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
+			f.write(f'{feature_inline} pub type {handle} = *const {handle}_T;\n')
 		for handle in non_dispatchable_handles:
 			f.write(f'/// Non-dispatchable handle `{handle}` from {version}\n')
 			if not handle.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html\n')
-			f.write(f'#[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
-			f.write(f'#[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
-			f.write(f'#[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
+			f.write(f'{feature_inline} #[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
+			f.write(f'{feature_inline} #[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
+			f.write(f'{feature_inline} #[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
 		for enum, enumpair in enums.items():
 			already_values = {}
 			asso = io.StringIO()
 			f.write(f'/// enum `{enum}` from {version}\n')
 			if not enum.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{enum}.html>\n')
+			f.write(feature)
 			f.write('#[repr(C)]\n')
 			f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
 			f.write(f'pub enum {enum} {{\n')
@@ -720,6 +736,7 @@ def to_rust(outfile, parsed):
 			f.write(f'/// union `{union_name}` from {version}\n')
 			if not union_name.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{union_name}.html>\n')
+			f.write(feature)
 			f.write('#[repr(C)]\n')
 			f.write('#[derive(Clone, Copy)]\n')
 			f.write(f'pub union {union_name} {{\n')
@@ -727,6 +744,7 @@ def to_rust(outfile, parsed):
 				name, type = process_guts(name, type)
 				f.write(f'\tpub {name}: {type},\n')
 			f.write('}\n')
+			f.write(feature)
 			f.write(f'impl Debug for {union_name} {{\n')
 			f.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
 			f.write(f'\t\tf.debug_struct("{union_name}")\n')
@@ -746,9 +764,11 @@ def to_rust(outfile, parsed):
 			struct = io.StringIO()
 			s_impl = io.StringIO()
 			d_impl = io.StringIO()
+			f.write(feature)
 			struct.write('#[repr(C)]\n')
 			struct.write('#[derive(Clone, Copy)]\n')
 			struct.write(f'pub struct {struct_name} {{\n')
+			d_impl.write(feature)
 			d_impl.write(f'impl Debug for {struct_name} {{\n')
 			d_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
 			d_impl.write(f'\t\tf.debug_struct("{struct_name}")\n')
@@ -760,6 +780,7 @@ def to_rust(outfile, parsed):
 					if has_bitfield == False:
 						has_bitfield = True
 						num_bitfields = 1
+						s_impl.write(feature)
 						s_impl.write(f'impl {struct_name} {{\n')
 					name, bits = name.split(':', 1)
 					bits = int(bits)
@@ -819,6 +840,7 @@ def to_rust(outfile, parsed):
 			funcname = functype_name.split('PFN_', 1)[-1]
 			f.write(f'/// function prototype `{functype_name}` from {version}\n')
 			f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{funcname}.html>\n')
+			f.write(feature)
 			f.write(f'type {functype_name} = extern "system" fn(');
 			params = []
 			for param_name, param_type in func_data['params'].items():
@@ -841,17 +863,25 @@ def to_rust(outfile, parsed):
 		traits.write(f'/// trait for `{version}`\n')
 		if not version.startswith('StdVideo'):
 			traits.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{version}.html>\n')
+		traits.write(feature)
 		traits.write(f'pub trait {version}: Debug {{')
 		struct.write(f'/// struct for `{version}`\n')
+		struct.write(feature)
 		struct.write(f'#[derive(Debug, Clone, Copy)]\n')
 		struct.write(f'pub struct {struct_version} {{')
+		t_impl.write(feature)
 		t_impl.write(f'impl {version} for {struct_version} {{')
+		d_impl.write(feature)
 		d_impl.write(f'impl Default for {struct_version} {{\n')
 		d_impl.write('\tfn default() -> Self {\n')
+		s_impl.write(feature)
 		s_impl.write(f'impl {struct_version} {{\n')
 		vk_struct.write(f'\t/// Subset of {version}\n')
+		vk_struct.write(feature_indent)
 		vk_struct.write(f'\tpub {snake_version}: {struct_version},\n')
+		vk_traits.write(feature)
 		vk_traits.write(f'impl {version} for VkCore {{')
+		vk_s_impl.write(feature_indent_3)
 		vk_s_impl.write(f'\t\t\t{snake_version}: {struct_version}::new(instance, &mut get_instance_proc_address),\n')
 		snakes = {}
 		if len(funcs):
@@ -879,6 +909,7 @@ def to_rust(outfile, parsed):
 				params_dummy += [f'_: {param_type}']
 				param_call += [param_name]
 			dummys.write(f'/// The dummy function for `{func}` from `{version}`\n')
+			dummys.write(feature)
 			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
 			traits.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{func}.html>\n')
 			traits.write(f'\tfn {func}(&self, {", ".join(params)})')
