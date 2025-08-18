@@ -1091,6 +1091,11 @@ if __name__ == '__main__':
 			'bInheritHandle': 'BOOL',
 		}
 	}
+	xcb_typedefs = {
+		'xcb_connection_t*': '*const c_void',
+		'xcb_window_t': 'uint32_t',
+		'xcb_visualid_t': 'uint32_t',
+	}
 	parsed = parse('vulkan_core.h', typedefs = basic_typedefs)
 	parsed = parse('vulkan_android.h', parsed, 1, feature_name = "android_khr")
 	parsed = parse('vulkan_ios.h', parsed, 1, feature_name = "ios_mvk")
@@ -1098,7 +1103,7 @@ if __name__ == '__main__':
 	parsed = parse('vulkan_metal.h', parsed, 1, feature_name = "metal_ext")
 	parsed = parse('vulkan_wayland.h', parsed, 1, typedefs = wayland_typedefs, feature_name = "wayland_khr")
 	parsed = parse('vulkan_win32.h', parsed, 1, handles = win32_handles, typedefs = win32_typedefs, structs = win32_structs, feature_name = "win32_khr")
-	parsed = parse('vulkan_xcb.h', parsed, 1, feature_name = "xcb_khr")
+	parsed = parse('vulkan_xcb.h', parsed, 1, typedefs = xcb_typedefs, feature_name = "xcb_khr")
 	with open('vkcore.json', 'w') as f:
 		json.dump(parsed, f, indent=4)
 	to_rust('vkcore.rs', parsed)
