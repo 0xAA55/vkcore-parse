@@ -991,6 +991,13 @@ def to_rust(outfile, parsed):
 
 if __name__ == '__main__':
 	parsed = parse('vulkan_core.h')
+	parsed = parse('vulkan_android.h', parsed, 1)
+	parsed = parse('vulkan_ios.h', parsed, 1)
+	parsed = parse('vulkan_macos.h', parsed, 1)
+	parsed = parse('vulkan_metal.h', parsed, 1)
+	parsed = parse('vulkan_wayland.h', parsed, 1)
+	parsed = parse('vulkan_win32.h', parsed, 1)
+	parsed = parse('vulkan_xcb.h', parsed, 1)
 	with open('vkcore.json', 'w') as f:
 		json.dump(parsed, f, indent=4)
 	to_rust('vkcore.rs', parsed)
