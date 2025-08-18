@@ -238,7 +238,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 				continue
 			if is_unwanted:
 				print(echo_indent, end='')
-				print(f'Skip cpp code: {line}')
+				print(f'Skip filtered code: {line}')
 				continue
 			if line.startswith('#define ') and line.endswith('_H_ 1'):
 				print(echo_indent, end='')
