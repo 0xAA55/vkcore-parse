@@ -69,9 +69,10 @@ def parse(input, initial = {}, is_include_header = 0):
 	is_union = False
 	is_struct = False
 	is_proto = False
-	is_cpp = False
+	is_unwanted = False
 	is_typedef_func = False
 	is_multiline_comment = False
+	macro_conditions = []
 	cur_func = {}
 	cur_enum = {}
 	cur_union = {}
@@ -153,20 +154,21 @@ def parse(input, initial = {}, is_include_header = 0):
 			if line.endswith('\\'):
 				last_line += line[:-1]
 				continue
-			if line.startswith(('#ifdef ', '#ifndef ')):
+			if line.startswith(('#if ', '#ifdef ', '#ifndef ')):
 				sharp_if_level += 1
+				macro_conditions += [is_unwanted]
 				if line.startswith('#ifndef VK_NO_PROTOTYPES'):
 					is_proto = True
-				elif line.startswith('#ifdef __cplusplus'):
-					is_cpp = True
+				elif line.startswith(('#ifdef __cplusplus', '#ifdef __OBJC__')):
+					is_unwanted = True
 				continue
 			if line.startswith("#else"):
+				is_unwanted = not is_unwanted
 				continue
 			if line.startswith('#endif'):
 				sharp_if_level -= 1
-				if sharp_if_level <= 1:
-					is_proto = False
-					is_cpp = False
+				is_proto = False
+				is_unwanted = macro_conditions.pop()
 				continue
 			if line.startswith('#include'):
 				print(echo_indent, end='')
@@ -220,7 +222,7 @@ def parse(input, initial = {}, is_include_header = 0):
 					for type, alias in must_alias.items():
 						if ' ' not in type and '*' not in type:
 							ret[cur_ver]['typedefs'][type] = alias
-			if is_cpp:
+			if is_unwanted:
 				print(echo_indent, end='')
 				print(f'Skip cpp code: {line}')
 				continue
