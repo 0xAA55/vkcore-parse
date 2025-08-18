@@ -114,8 +114,6 @@ def parse(input, initial = {}, is_include_header = 0):
 		'float': 'f32',
 		'double': 'f64',
 		'const char*': "*const i8",
-		'struct wl_display*': '*const c_void',
-		'struct wl_surface*': '*const c_void',
 	}
 	try:
 		metadata = ret['metadata']
