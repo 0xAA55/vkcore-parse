@@ -1052,14 +1052,54 @@ def to_rust(outfile, parsed):
 
 
 if __name__ == '__main__':
-	parsed = parse('vulkan_core.h')
-	parsed = parse('vulkan_android.h', parsed, 1)
-	parsed = parse('vulkan_ios.h', parsed, 1)
-	parsed = parse('vulkan_macos.h', parsed, 1)
-	parsed = parse('vulkan_metal.h', parsed, 1)
-	parsed = parse('vulkan_wayland.h', parsed, 1)
-	parsed = parse('vulkan_win32.h', parsed, 1)
-	parsed = parse('vulkan_xcb.h', parsed, 1)
+	basic_typedefs = {
+		'int8_t': 'i8',
+		'int16_t': 'i16',
+		'int32_t': 'i32',
+		'int64_t': 'i64',
+		'uint8_t': 'u8',
+		'uint16_t': 'u16',
+		'uint32_t': 'u32',
+		'uint64_t': 'u64',
+		'size_t': 'usize',
+		'char': 'i8',
+		'short': 'i16',
+		'int': 'i32',
+		'unsigned': 'u32',
+		'long': 'i64',
+		'float': 'f32',
+		'double': 'f64',
+	}
+	wayland_typedefs = {
+		'struct wl_display*': '*const c_void',
+		'struct wl_surface*': '*const c_void',
+	}
+	win32_typedefs = {
+		'LPCWSTR': '*const i16',
+		'DWORD': 'u32',
+		'BOOL': 'u32',
+	}
+	win32_handles = [
+		'HINSTANCE',
+		'HANDLE',
+		'HWND',
+		'HMONITOR',
+	]
+	win32_structs = {
+		'SECURITY_ATTRIBUTES': {
+			'nLength': 'DWORD',
+			'lpSecurityDescriptor': 'const void*',
+			'bInheritHandle': 'BOOL',
+		}
+	}
+	parsed = parse('vulkan_core.h', typedefs = basic_typedefs)
+	parsed = parse('vulkan_android.h', parsed, 1, feature_name = "android_khr")
+	parsed = parse('vulkan_ios.h', parsed, 1, feature_name = "ios_mvk")
+	parsed = parse('vulkan_macos.h', parsed, 1, feature_name = "macos_mvk")
+	parsed = parse('vulkan_metal.h', parsed, 1, feature_name = "metal_ext")
+	parsed = parse('vulkan_wayland.h', parsed, 1, typedefs = wayland_typedefs, feature_name = "wayland_khr")
+	parsed = parse('vulkan_win32.h', parsed, 1, handles = win32_handles, typedefs = win32_typedefs, structs = win32_structs, feature_name = "win32_khr")
+	parsed = parse('vulkan_xcb.h', parsed, 1, feature_name = "xcb_khr")
 	with open('vkcore.json', 'w') as f:
 		json.dump(parsed, f, indent=4)
 	to_rust('vkcore.rs', parsed)
