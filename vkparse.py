@@ -129,6 +129,7 @@ def parse(input, initial = {}, is_include_header = 0):
 		enabled = True
 	last_line = ''
 	echo_indent = '    ' * is_include_header
+	cur_ver = None
 	with open(input, 'r') as f:
 		line_no = 0
 		for line in f:
@@ -208,6 +209,9 @@ def parse(input, initial = {}, is_include_header = 0):
 				else:
 					continue
 			if line.startswith(('#define VK_', '#define vulkan_')) and line.endswith(' 1') and indent == 0 and '_SPEC_VERSION ' not in line:
+				is_first_ver = False
+				if cur_ver is None:
+					is_first_ver = True
 				cur_ver = line.split(' ', 2)[1];
 				ret[cur_ver] = {
 					'typedefs': {},
