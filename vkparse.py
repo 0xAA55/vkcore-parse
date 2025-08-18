@@ -61,7 +61,7 @@ def is_good_identifier(text):
 			return False
 	return True
 
-def parse(input, initial = {}, is_include_header = 0):
+def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {}, structs = {}, feature_name = None):
 	ret = initial
 	cur_ver = ''
 	sharp_if_level = 0
@@ -116,6 +116,7 @@ def parse(input, initial = {}, is_include_header = 0):
 		'unsigned long long': 'u64',
 		'const char*': "*const i8",
 	}
+	must_alias |= typedefs
 	try:
 		metadata = ret['metadata']
 		all_enum_names |= set(metadata['all_enum_names'])
@@ -228,10 +229,13 @@ def parse(input, initial = {}, is_include_header = 0):
 					'funcs': [],
 					'func_protos': {},
 				}
-				if cur_ver == 'VK_VERSION_1_0':
-					for type, alias in must_alias.items():
-						if ' ' not in type and '*' not in type:
-							ret[cur_ver]['typedefs'][type] = alias
+				if is_first_ver:
+					ret[cur_ver]['handles'] = list(set(ret[cur_ver]['handles']) | set(handles))
+					ret[cur_ver]['typedefs'] |= typedefs
+					ret[cur_ver]['structs'] |= structs
+				if feature_name is not None:
+					ret[cur_ver]['feature'] = feature_name
+				continue
 			if is_unwanted:
 				print(echo_indent, end='')
 				print(f'Skip cpp code: {line}')
