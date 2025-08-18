@@ -626,8 +626,8 @@ def to_rust(outfile, parsed):
 		funcs = verdata['funcs']
 		try:
 			feature = verdata['feature']
-			feature_inline = f'#[cfg(feature = "{feature}")]'
-			feature = f'{feature_inline}\n'
+			feature_inline = f'#[cfg(feature = "{feature}")] '
+			feature = f'#[cfg(feature = "{feature}")]\n'
 			feature_indent = f'\t{feature}'
 			feature_indent_3 = f'\t\t\t{feature}'
 		except KeyError:
@@ -694,15 +694,15 @@ def to_rust(outfile, parsed):
 			f.write(f'/// Normal handle `{handle}` from {version}\n')
 			if not handle.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html>\n')
-			f.write(f'{feature_inline} #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
-			f.write(f'{feature_inline} pub type {handle} = *const {handle}_T;\n')
+			f.write(f'{feature_inline}#[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
+			f.write(f'{feature_inline}pub type {handle} = *const {handle}_T;\n')
 		for handle in non_dispatchable_handles:
 			f.write(f'/// Non-dispatchable handle `{handle}` from {version}\n')
 			if not handle.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html\n')
-			f.write(f'{feature_inline} #[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
-			f.write(f'{feature_inline} #[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
-			f.write(f'{feature_inline} #[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
+			f.write(f'{feature_inline}#[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
+			f.write(f'{feature_inline}#[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
+			f.write(f'{feature_inline}#[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
 		for enum, enumpair in enums.items():
 			already_values = {}
 			asso = io.StringIO()
