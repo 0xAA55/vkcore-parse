@@ -664,7 +664,8 @@ def to_rust(outfile, parsed):
 			else:
 				f.write(f'/// type definition for Rust: `{type}` = `{tname}`\n')
 				f.write(f'/// - Reference: <https://en.cppreference.com/w/cpp/types/integer.html>\n')
-			f.write(f'pub type {type} = {tname};\n')
+			if is_good_identifier(type):
+				f.write(f'pub type {type} = {tname};\n')
 			enumbf_type, enumbf_data = is_bitfield_enum(type)
 			if enumbf_type is not None:
 				f.write(f'pub fn {to_snake(type)}_to_string(value: {type}) -> String {{\n')
