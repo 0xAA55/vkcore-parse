@@ -170,7 +170,6 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 				continue
 			if line.startswith("#else"):
 				is_unwanted = not is_unwanted
-				is_proto = not is_proto
 				continue
 			if line.startswith('#endif'):
 				sharp_if_level -= 1
