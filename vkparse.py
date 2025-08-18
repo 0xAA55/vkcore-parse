@@ -616,6 +616,7 @@ def to_rust(outfile, parsed):
 	def process_version(version, verdata, f):
 		nonlocal vk_struct, vk_traits, vk_s_impl
 		constants = verdata['constants']
+		typed_constants = verdata['typed_constants']
 		typedefs = verdata['typedefs']
 		handles = verdata['handles']
 		non_dispatchable_handles = verdata['non_dispatchable_handles']
@@ -643,6 +644,13 @@ def to_rust(outfile, parsed):
 			return enumbf_type, enumbf_data
 		for constant, value in constants.items():
 			constval, consttype = process_constant_value(value)
+			f.write(f'/// constant `{constant}` from {version}\n')
+			if not constant.startswith('StdVideo'):
+				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
+			f.write(f'pub const {constant}: {consttype} = {constval};\n')
+		for constant, (value) in typed_constants.items():
+			constval, consttype = value
+			constval, infertype = process_constant_value(constval)
 			f.write(f'/// constant `{constant}` from {version}\n')
 			if not constant.startswith('StdVideo'):
 				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
