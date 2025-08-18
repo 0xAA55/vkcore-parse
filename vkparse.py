@@ -601,6 +601,23 @@ def to_rust(outfile, parsed):
 		structs = verdata['structs']
 		func_protos = verdata['func_protos']
 		funcs = verdata['funcs']
+		def is_bitfield_enum(typename):
+			nonlocal enums
+			suffix = ''
+			while typename[-1].isupper():
+				suffix = typename[-1] + suffix
+				typename = typename[:-1]
+				if len(typename) == 0:
+					return None, None
+			if typename[-1] == 's':
+				typename = typename[:-1]
+			enumbf_type = f'{typename}Bits{suffix}'
+			try:
+				enumbf_data = enums[enumbf_type]
+			except KeyError:
+				enumbf_type = None
+				enumbf_data = None
+			return enumbf_type, enumbf_data
 		for constant, value in constants.items():
 			constval, consttype = process_constant_value(value)
 			f.write(f'/// constant `{constant}` from {version}\n')
@@ -617,14 +634,7 @@ def to_rust(outfile, parsed):
 				f.write(f'/// type definition for Rust: `{type}` = `{tname}`\n')
 				f.write(f'/// - Reference: <https://en.cppreference.com/w/cpp/types/integer.html>\n')
 			f.write(f'pub type {type} = {tname};\n')
-			if type[-1] == 's':
-				enumbf_type = f'{type[:-1]}Bits'
-				try:
-					enumbf_data = enums[enumbf_type]
-				except KeyError:
-					enumbf_type = None
-			else:
-				enumbf_type = None
+			enumbf_type, enumbf_data = is_bitfield_enum(type)
 			if enumbf_type is not None:
 				f.write(f'pub fn {to_snake(type)}_to_string(value: {type}) -> String {{\n')
 				f.write(f'\tlet mut flags = Vec::<&str>::with_capacity({len(enumbf_data)});\n')
@@ -714,14 +724,7 @@ def to_rust(outfile, parsed):
 			have_special_fields = False
 			for name, type in struct_guts.items():
 				name, type = process_guts(name, type)
-				if type[-1] == 's':
-					enumbf_type = f'{type[:-1]}Bits'
-					try:
-						enumbf_pairs = enums[enumbf_type]
-					except KeyError:
-						enumbf_type = None
-				else:
-					enumbf_type = None
+				enumbf_type, enumbf_data = is_bitfield_enum(type)
 				if ':' in name:
 					if has_bitfield == False:
 						has_bitfield = True
