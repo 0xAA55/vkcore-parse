@@ -421,6 +421,13 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 						print(echo_indent, end='')
 						print(f'Unknown struct at line {line_no}: {line}')
 					continue
+				if line.startswith('static const ') and line[-1] == ';':
+					type_ident, value = line[len('static const '):-1].split('=')
+					type_, ident = type_ident.strip().split(' ', 1)
+					value = value.strip()
+					ret[cur_ver]['typed_constants'][ident] = [value, type_]
+					all_const_values |= {ident: value}
+					continue
 				if line.startswith('VK_DEFINE_HANDLE'):
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
 					ret[cur_ver]['handles'] += [handle_name]
