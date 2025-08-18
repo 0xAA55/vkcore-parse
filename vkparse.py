@@ -367,7 +367,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 						handle_name = line.rsplit(' ', 1)[-1][:-1].strip()
 						ret[cur_ver]['handles'] += [handle_name]
 						print(echo_indent, end='')
-						print(f'Parse `{line}` as handle definition: {handle_name}')
+						print(f'Parsed `{line}` as handle definition: {handle_name}')
 					else:
 						is_struct = True
 						cur_struct = {}
@@ -414,7 +414,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 					identifier = line[len('struct '):-1]
 					if is_good_identifier(identifier):
 						print(echo_indent, end='')
-						print(f'Parse `{line}` as handle definition: {identifier}')
+						print(f'Parsed `{line}` as handle definition: {identifier}')
 						ret[cur_ver]['handles'] += [identifier]
 					else:
 						print(echo_indent, end='')
