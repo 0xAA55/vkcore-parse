@@ -396,6 +396,15 @@ def parse(input, initial = {}, is_include_header = 0):
 							print(echo_indent, end='')
 							print(f'Unknown data in typedef: "{line}"')
 					continue
+				if line.startswith('struct ') and line[-1] == ';':
+					identifier = line[len('struct '):-1]
+					if is_good_identifier(identifier):
+						print(echo_indent, end='')
+						print(f'Parse `{line}` as handle definition: {identifier}')
+						ret[cur_ver]['handles'] += [identifier]
+					else:
+						print(echo_indent, end='')
+						print(f'Unknown struct: {line}')
 				if line.startswith('VK_DEFINE_HANDLE'):
 					handle_name = line.split('(', 1)[1].split(')', 1)[0]
 					ret[cur_ver]['handles'] += [handle_name]
