@@ -690,6 +690,7 @@ def to_rust(outfile, parsed):
 					f.write(f'pub type {type} = {tname};\n')
 			enumbf_type, enumbf_data = is_bitfield_enum(type)
 			if enumbf_type is not None:
+				f.write(f'/// Convert `{type}` to `String`, showing the composition of the bits from the member of `{enumbf_type}`\n')
 				f.write(feature)
 				f.write(f'pub fn {to_snake(type)}_to_string(value: {type}) -> String {{\n')
 				f.write(f'\tlet mut flags = Vec::<&str>::with_capacity({len(enumbf_data)});\n')
