@@ -1003,6 +1003,7 @@ def to_rust(outfile, parsed):
 		f.write('\t(major << 22) | (minor << 12) | patch\n')
 		f.write('}\n')
 		f.write('\n')
+		f.write('/// Convert byte array to a string that represents the data of the array.\n')
 		f.write('fn to_byte_array_string<const N: usize>(input: &[u8; N]) -> String {\n')
 		f.write('\tformat!("[{}]", input.iter().map(|b|format!("0x{b:02X}")).collect::<Vec<String>>().join(", "))\n')
 		f.write('}\n')
