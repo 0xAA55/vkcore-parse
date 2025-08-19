@@ -911,7 +911,7 @@ def to_rust(outfile, parsed):
 			dummys.write(f'/// The dummy function for `{func}` from `{version}`\n')
 			dummys.write(feature)
 			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
-			traits.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{func}.html>\n')
+			traits.write(f'\t/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{func}.html>\n')
 			traits.write(f'\tfn {func}(&self, {", ".join(params)})')
 			t_impl.write(f'\tfn {func}(&self, {", ".join(params)})')
 			vk_traits.write(f'\tfn {func}(&self, {", ".join(params)})')
