@@ -1089,6 +1089,22 @@ def to_rust(outfile, parsed):
 		f.write(vk_struct.getvalue())
 		f.write(vk_traits.getvalue())
 		f.write(vk_s_impl.getvalue())
+		f.write('\n')
+		f.write('#[cfg(any(feature = "glfw", test))]\n')
+		f.write('mod glfw_create_surface {\n')
+		f.write('\tuse vkcore_rs::*;\n')
+		f.write('\tuse glfw::*;\n')
+		f.write('\tunsafe extern "C" {\n')
+		f.write('\t\tfn glfwCreateWindowSurface(instance: VkInstance, window: *const GLFWwindow, allocator: *const VkAllocationCallbacks, surface: *mut VkSurfaceKHR) -> VkResult;\n')
+		f.write('\t}\n')
+		f.write('\t/// The function for you to create a `VkSurfaceKHR` when the feature "glfw" is enabled\n')
+		f.write('\tpub fn vkCreateWindowSurfaceGLFW(instance: VkInstance, window: &PWindow, allocator: *const VkAllocationCallbacks, surface: *mut VkSurfaceKHR) -> VkResult {\n')
+		f.write('\t\tglfwCreateWindowSurface(instance, window.window_ptr(), allocator, &mut surface)\n')
+		f.write('\t}\n')
+		f.write('}\n')
+		f.write('\n')
+		f.write('#[cfg(any(feature = "glfw", test))]\n')
+		f.write('pub use glfw_create_surface::vkCreateWindowSurfaceGLFW;\n')
 
 
 if __name__ == '__main__':
