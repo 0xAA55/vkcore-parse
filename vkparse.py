@@ -61,7 +61,7 @@ def is_good_identifier(text):
 			return False
 	return True
 
-def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {}, structs = {}, feature_name = None):
+def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {}, aliases = {}, structs = {}, feature_name = None):
 	ret = initial
 	cur_ver = ''
 	sharp_if_level = 0
@@ -116,7 +116,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 		'unsigned long long': 'u64',
 		'const char*': "*const i8",
 	}
-	must_alias |= typedefs
+	must_alias |= aliases
 	try:
 		metadata = ret['metadata']
 		all_enum_names |= set(metadata['all_enum_names'])
@@ -1100,9 +1100,14 @@ if __name__ == '__main__':
 		'float': 'f32',
 		'double': 'f64',
 	}
+	basic_aliases = basic_typedefs
 	wayland_typedefs = {
 		'struct wl_display*': '*const c_void',
 		'struct wl_surface*': '*const c_void',
+	}
+	wayland_aliases = {
+		'struct wl_display*': 'wl_display',
+		'struct wl_surface*': 'wl_surface',
 	}
 	win32_typedefs = {
 		'LPCWSTR': '*const i16',
@@ -1127,12 +1132,12 @@ if __name__ == '__main__':
 		'xcb_window_t': 'uint32_t',
 		'xcb_visualid_t': 'uint32_t',
 	}
-	parsed = parse('vulkan_core.h', typedefs = basic_typedefs)
+	parsed = parse('vulkan_core.h', typedefs = basic_typedefs, aliases = basic_aliases)
 	parsed = parse('vulkan_android.h', parsed, 1, feature_name = "android_khr")
 	parsed = parse('vulkan_ios.h', parsed, 1, feature_name = "ios_mvk")
 	parsed = parse('vulkan_macos.h', parsed, 1, feature_name = "macos_mvk")
 	parsed = parse('vulkan_metal.h', parsed, 1, feature_name = "metal_ext")
-	parsed = parse('vulkan_wayland.h', parsed, 1, typedefs = wayland_typedefs, feature_name = "wayland_khr")
+	parsed = parse('vulkan_wayland.h', parsed, 1, typedefs = wayland_typedefs, aliases = wayland_aliases, feature_name = "wayland_khr")
 	parsed = parse('vulkan_win32.h', parsed, 1, handles = win32_handles, typedefs = win32_typedefs, structs = win32_structs, feature_name = "win32_khr")
 	parsed = parse('vulkan_xcb.h', parsed, 1, typedefs = xcb_typedefs, feature_name = "xcb_khr")
 	with open('vkcore.json', 'w') as f:
