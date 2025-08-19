@@ -936,11 +936,11 @@ def to_rust(outfile, parsed):
 			dummys.write(f'\tpanic_any(VkError::NullFunctionPointer("{func}"))\n');
 			dummys.write('}\n')
 			if ret_type == 'VkResult':
-				t_impl.write(f'\t\tconvert_result("{func}", catch_unwind(||((self.{func_snake})({", ".join(param_call)}))))\n')
-				vk_traits.write(f'\t\tconvert_result("{func}", catch_unwind(||((self.{snake_version}.{func_snake})({", ".join(param_call)}))))\n')
+				t_impl.write(f'\t\tvk_convert_result("{func}", catch_unwind(||((self.{func_snake})({", ".join(param_call)}))))\n')
+				vk_traits.write(f'\t\tvk_convert_result("{func}", catch_unwind(||((self.{snake_version}.{func_snake})({", ".join(param_call)}))))\n')
 			else:
-				t_impl.write(f'\t\tprocess_catch(catch_unwind(||((self.{func_snake})({", ".join(param_call)}))))\n')
-				vk_traits.write(f'\t\tprocess_catch(catch_unwind(||((self.{snake_version}.{func_snake})({", ".join(param_call)}))))\n')
+				t_impl.write(f'\t\tvk_process_catch(catch_unwind(||((self.{func_snake})({", ".join(param_call)}))))\n')
+				vk_traits.write(f'\t\tvk_process_catch(catch_unwind(||((self.{snake_version}.{func_snake})({", ".join(param_call)}))))\n')
 			t_impl.write('\t}\n')
 			vk_traits.write('\t}\n')
 			struct.write(f'\t{func_snake}: PFN_{func},\n')
@@ -1021,7 +1021,7 @@ def to_rust(outfile, parsed):
 		f.write('type Result<T> = std::result::Result<T, VkError>;\n')
 		f.write('\n')
 		f.write('/// Translate the returned `Result<T>` from `std::panic::catch_unwind()` to our `Result<T>`\n')
-		f.write('fn process_catch<T>(ret: std::thread::Result<T>) -> Result<T> {\n')
+		f.write('pub fn vk_process_catch<T>(ret: std::thread::Result<T>) -> Result<T> {\n')
 		f.write('\tmatch ret {\n')
 		f.write('\t\tOk(ret) => Ok(ret),\n')
 		f.write('\t\tErr(e) => {\n')
@@ -1035,7 +1035,7 @@ def to_rust(outfile, parsed):
 		f.write('}\n')
 		f.write('\n')
 		f.write('/// Convert a result returned from `std::panic::catch_unwind()` with `VkResult` to our `Result<()>` \n')
-		f.write('fn convert_result(function_name: &\'static str, result: std::thread::Result<VkResult>) -> Result<()> {\n')
+		f.write('pub fn vk_convert_result(function_name: &\'static str, result: std::thread::Result<VkResult>) -> Result<()> {\n')
 		f.write('\tif let Ok(result) = result {\n')
 		f.write('\t\tmatch result {\n')
 		f.write('\t\t\tVkResult::VK_SUCCESS => Ok(()),\n')
