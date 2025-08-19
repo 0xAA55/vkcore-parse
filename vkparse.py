@@ -679,6 +679,15 @@ def to_rust(outfile, parsed):
 			if is_good_identifier(type):
 				f.write(feature)
 				f.write(f'pub type {type} = {tname};\n')
+			else:
+				while type.endswith('*'):
+					type = type[:-1].rstrip()
+					if type.endswith('const'):
+						type = type[:-len('const')]
+				type = type.rsplit(' ', 1)[-1]
+				if is_good_identifier(type):
+					f.write(feature)
+					f.write(f'pub type {type} = {tname};\n')
 			enumbf_type, enumbf_data = is_bitfield_enum(type)
 			if enumbf_type is not None:
 				f.write(feature)
