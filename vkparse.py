@@ -873,6 +873,7 @@ def to_rust(outfile, parsed):
 		t_impl = io.StringIO()
 		d_impl = io.StringIO()
 		s_impl = io.StringIO()
+		g_impl = io.StringIO()
 		struct_version = f'Vulkan_{version.split("_", 1)[-1]}'
 		snake_version = to_snake(version)
 		traits.write(f'/// trait for `{version}`\n')
@@ -882,7 +883,7 @@ def to_rust(outfile, parsed):
 		traits.write(f'pub trait {version}: Debug {{')
 		struct.write(f'/// struct for `{version}`\n')
 		struct.write(feature)
-		struct.write(f'#[derive(Debug, Clone, Copy)]\n')
+		struct.write(f'#[derive(Clone, Copy)]\n')
 		struct.write(f'pub struct {struct_version} {{')
 		t_impl.write(feature)
 		t_impl.write(f'impl {version} for {struct_version} {{')
@@ -891,6 +892,10 @@ def to_rust(outfile, parsed):
 		d_impl.write('\tfn default() -> Self {\n')
 		s_impl.write(feature)
 		s_impl.write(f'impl {struct_version} {{\n')
+		g_impl.write(feature)
+		g_impl.write(f'impl Debug for {struct_version} {{\n')
+		g_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
+		g_impl.write(f'\t\tf.debug_struct("{struct_version}")\n')
 		vk_struct.write(f'\t/// Subset of {version}\n')
 		vk_struct.write(feature_indent)
 		vk_struct.write(f'\tpub {snake_version}: {struct_version},\n')
@@ -932,6 +937,7 @@ def to_rust(outfile, parsed):
 			vk_traits.write(f'\tfn {func}(&self, {", ".join(params)})')
 			d_impl.write(f'\t\t\t{func_snake}: dummy_{func},\n');
 			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_instance_proc_address(instance, "{func}"); if proc == null() {{dummy_{func}}} else {{unsafe {{transmute(proc)}}}}}},\n')
+			g_impl.write(f'\t\t.field("{func}", &if self.{func_snake} == dummy_{func} {{unsafe {{transmute(null::<PFN_{func}>())}}}} else {{self.{func_snake}}})\n')
 			ret_type = func_data["ret_type"]
 			if ret_type == 'void':
 				dummys.write(' {\n')
@@ -972,6 +978,9 @@ def to_rust(outfile, parsed):
 		s_impl.write('}\n')
 		d_impl.write('\t}\n')
 		d_impl.write('}\n')
+		g_impl.write('\t\t.finish()\n')
+		g_impl.write('\t}\n')
+		g_impl.write('}\n')
 		vk_traits.write('}\n')
 		f.write(dummys.getvalue())
 		f.write(traits.getvalue())
@@ -979,6 +988,7 @@ def to_rust(outfile, parsed):
 		f.write(t_impl.getvalue())
 		f.write(d_impl.getvalue())
 		f.write(s_impl.getvalue())
+		f.write(g_impl.getvalue())
 	vkresult_enum = parsed['VK_VERSION_1_0']['enums']['VkResult'];
 	with open(outfile, 'w') as f:
 		f.write('\n')
@@ -986,6 +996,7 @@ def to_rust(outfile, parsed):
 		f.write('#![allow(non_snake_case)]\n')
 		f.write('#![allow(non_camel_case_types)]\n')
 		f.write('#![allow(non_upper_case_globals)]\n')
+		f.write('#![allow(unpredictable_function_pointer_comparisons)]')
 		f.write('\n')
 		f.write('use std::{\n')
 		f.write('\tcollections::BTreeSet,\n')
