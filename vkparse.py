@@ -698,7 +698,12 @@ def to_rust(outfile, parsed):
 					f.write(f'\tif (value & {enumbf_type}::{enum_string} as {type}) == {enumbf_type}::{enum_string} as {type} {{\n')
 					f.write(f'\t\tflags.push("{enumbf_type}::{enum_string}");\n')
 					f.write('\t}\n')
-				f.write(f'\tflags.join(" | ")\n')
+				f.write(f'\tlet ret = flags.join(" | ");\n')
+				f.write('\tif ret.len() != 0 {\n')
+				f.write('\t\tret\n')
+				f.write('\t} else {\n')
+				f.write('\t\tString::from("0")\n')
+				f.write('\t}\n')
 				f.write('}\n')
 		for handle in handles:
 			f.write(f'/// Normal handle `{handle}` from {version}\n')
