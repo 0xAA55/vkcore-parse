@@ -741,7 +741,7 @@ def to_rust(outfile, parsed):
 					f.write(f'\t\tflags.push("{enumbf_type}::{enum_string}");\n')
 					f.write('\t}\n')
 				f.write(f'\tlet ret = flags.join(" | ");\n')
-				f.write('\tif ret.len() != 0 {\n')
+				f.write('\tif !ret.is_empty() {\n')
 				f.write('\t\tret\n')
 				f.write('\t} else {\n')
 				f.write('\t\tString::from("0")\n')
