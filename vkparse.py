@@ -987,8 +987,6 @@ def to_rust(outfile, parsed):
 			t_impl.write(f'\tfn {func}(&self, {", ".join(params)})')
 			vk_traits.write(f'\tfn {func}(&self, {", ".join(params)})')
 			d_impl.write(f'\t\t\t{func_snake}: dummy_{func},\n');
-			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_instance_proc_address(instance, "{func}"); if proc == null() {{dummy_{func}}} else {{unsafe {{transmute(proc)}}}}}},\n')
-			g_impl.write(f'\t\t.field("{func}", &if self.{func_snake} == dummy_{func} {{unsafe {{transmute(null::<PFN_{func}>())}}}} else {{self.{func_snake}}})\n')
 			if ret_type == 'void':
 				r_rettype_suffix = ''
 				dummys.write(' {\n')
@@ -1009,6 +1007,8 @@ def to_rust(outfile, parsed):
 				vk_traits.write(f' -> Result<{ret_type_rust}> {{\n')
 			dummys.write(f'\tpanic_any(VkError::NullFunctionPointer("{func}"))\n');
 			dummys.write('}\n')
+			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_instance_proc_address(instance, "{func}"); if proc.is_null() {{dummy_{func}}} else {{unsafe {{transmute::<*const c_void, PFN_{func}>(proc)}}}}}},\n')
+			g_impl.write(f'\t\t.field("{func}", &if self.{func_snake} == dummy_{func} {{null::<c_void>()}} else {{self.{func_snake} as *const c_void}})\n')
 			if ret_type == 'VkResult':
 				t_impl.write(f'\t\tvk_convert_result("{func}", catch_unwind(||((self.{func_snake})({", ".join(param_call)}))))\n')
 				vk_traits.write(f'\t\tvk_convert_result("{func}", catch_unwind(||((self.{snake_version}.{func_snake})({", ".join(param_call)}))))\n')
