@@ -487,7 +487,10 @@ def to_rust(outfile, parsed):
 			is_array = True
 			name, size = name.rsplit('[', 1)
 			size = size.split(']', 1)[0]
-			type = f'[{type}; {size} as usize]'
+			if size.isnumeric():
+				type = f'[{type}; {size}_usize]'
+			else:
+				type = f'[{type}; {size} as usize]'
 		if is_param and is_array: type = f'&{type}'
 		if name == 'type': name = f'{name}_'
 		return name, type
