@@ -504,7 +504,9 @@ def to_rust(outfile, parsed):
 				break
 		type_ = None
 		value = value.lower()
-		if value.endswith('ull'):
+		if f'{value[0]}{value[-1]}' == '""' and len(value) >= 2:
+			type_ = '&str'
+		elif value.endswith('ull'):
 			type_ = 'u64'
 			value = f'{value[:-3]}u64'
 		elif value.endswith('ll'):
