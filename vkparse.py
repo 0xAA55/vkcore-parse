@@ -844,10 +844,16 @@ def to_rust(outfile, parsed):
 					bf_name = f'bitfield{num_bitfields}'
 					struct.write(f'\t/// Bitfield: {name}: {type} in {bits} bits\n')
 					s_impl.write(f'\tpub fn get_{name}(&self) -> u32 {{\n')
-					s_impl.write(f'\t\t(self.{bf_name} >> {last_bits}) & {hex((1 << bits) - 1)}\n')
+					if last_bits:
+						s_impl.write(f'\t\t(self.{bf_name} >> {last_bits}) & {hex((1 << bits) - 1)}\n')
+					else:
+						s_impl.write(f'\t\tself.{bf_name} & {hex((1 << bits) - 1)}\n')
 					s_impl.write('\t}\n')
 					s_impl.write(f'\tpub fn set_{name}(&mut self, value: u32) {{\n')
-					s_impl.write(f'\t\tself.{bf_name} = (value & {hex((1 << bits) - 1)}) << {last_bits};\n')
+					if last_bits:
+						s_impl.write(f'\t\tself.{bf_name} = (value & {hex((1 << bits) - 1)}) << {last_bits};\n')
+					else:
+						s_impl.write(f'\t\tself.{bf_name} = value & {hex((1 << bits) - 1)};\n')
 					s_impl.write('\t}\n')
 					if enumbf_type is not None:
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.get_{name}())))\n')
