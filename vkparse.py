@@ -1055,6 +1055,7 @@ def to_rust(outfile, parsed):
 		f.write('#![allow(non_camel_case_types)]\n')
 		f.write('#![allow(non_upper_case_globals)]\n')
 		f.write('#![allow(unpredictable_function_pointer_comparisons)]')
+		f.write('#![allow(clippy::too_many_arguments)]')
 		f.write('#![allow(clippy::missing_transmute_annotations)]')
 		f.write('\n')
 		f.write('use std::{\n')
