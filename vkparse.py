@@ -970,11 +970,15 @@ def to_rust(outfile, parsed):
 			params = []
 			params_dummy = []
 			param_call = []
+			param_proto = []
+			ret_type = func_data["ret_type"]
+			ret_type_rust = ctype_to_rust(ret_type)
 			for param_name, param_type in func_data['params'].items():
 				param_name, param_type = process_guts(param_name, param_type, is_param = True)
 				params += [f'{param_name}: {param_type}']
 				params_dummy += [f'_: {param_type}']
 				param_call += [param_name]
+				param_proto += [param_type]
 			dummys.write(f'/// The dummy function for `{func}` from `{version}`\n')
 			dummys.write(feature)
 			dummys.write(f'extern "system" fn dummy_{func}({", ".join(params_dummy)})')
@@ -985,22 +989,24 @@ def to_rust(outfile, parsed):
 			d_impl.write(f'\t\t\t{func_snake}: dummy_{func},\n');
 			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_instance_proc_address(instance, "{func}"); if proc == null() {{dummy_{func}}} else {{unsafe {{transmute(proc)}}}}}},\n')
 			g_impl.write(f'\t\t.field("{func}", &if self.{func_snake} == dummy_{func} {{unsafe {{transmute(null::<PFN_{func}>())}}}} else {{self.{func_snake}}})\n')
-			ret_type = func_data["ret_type"]
 			if ret_type == 'void':
+				r_rettype_suffix = ''
 				dummys.write(' {\n')
 				traits.write(' -> Result<()>;\n')
 				t_impl.write(' -> Result<()> {\n')
 				vk_traits.write(' -> Result<()> {\n')
 			elif ret_type == 'VkResult':
-				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
+				r_rettype_suffix = f' -> {ret_type_rust}'
+				dummys.write(f'{r_rettype_suffix} {{\n')
 				traits.write(f' -> Result<()>;\n')
 				t_impl.write(f' -> Result<()> {{\n')
 				vk_traits.write(f' -> Result<()> {{\n')
 			else:
-				dummys.write(f' -> {ctype_to_rust(ret_type)} {{\n')
-				traits.write(f' -> Result<{ctype_to_rust(ret_type)}>;\n')
-				t_impl.write(f' -> Result<{ctype_to_rust(ret_type)}> {{\n')
-				vk_traits.write(f' -> Result<{ctype_to_rust(ret_type)}> {{\n')
+				r_rettype_suffix = f' -> {ret_type_rust}'
+				dummys.write(f'{r_rettype_suffix} {{\n')
+				traits.write(f' -> Result<{ret_type_rust}>;\n')
+				t_impl.write(f' -> Result<{ret_type_rust}> {{\n')
+				vk_traits.write(f' -> Result<{ret_type_rust}> {{\n')
 			dummys.write(f'\tpanic_any(VkError::NullFunctionPointer("{func}"))\n');
 			dummys.write('}\n')
 			if ret_type == 'VkResult':
