@@ -1013,7 +1013,7 @@ def to_rust(outfile, parsed):
 				vk_traits.write(f' -> Result<{ret_type_rust}> {{\n')
 			dummys.write(f'\tpanic_any(VkError::NullFunctionPointer("{func}"))\n');
 			dummys.write('}\n')
-			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_instance_proc_address(instance, "{func}"); if proc.is_null() {{dummy_{func}}} else {{unsafe {{transmute::<*const c_void, PFN_{func}>(proc)}}}}}},\n')
+			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_instance_proc_address(instance, "{func}"); if proc.is_null() {{dummy_{func}}} else {{unsafe {{transmute(proc)}}}}}},\n')
 			g_impl.write(f'\t\t.field("{func}", &if self.{func_snake} == dummy_{func} {{null::<c_void>()}} else {{self.{func_snake} as *const c_void}})\n')
 			if ret_type == 'VkResult':
 				t_impl.write(f'\t\tvk_convert_result("{func}", catch_unwind(||((self.{func_snake})({", ".join(param_call)}))))\n')
@@ -1055,6 +1055,7 @@ def to_rust(outfile, parsed):
 		f.write('#![allow(non_camel_case_types)]\n')
 		f.write('#![allow(non_upper_case_globals)]\n')
 		f.write('#![allow(unpredictable_function_pointer_comparisons)]')
+		f.write('#![allow(clippy::missing_transmute_annotations)]')
 		f.write('\n')
 		f.write('use std::{\n')
 		f.write('\tcollections::BTreeSet,\n')
