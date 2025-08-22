@@ -925,13 +925,17 @@ def to_rust(outfile, parsed):
 		traits.write(f'pub trait {version}: Debug {{')
 		struct.write(f'/// struct for `{version}`\n')
 		struct.write(feature)
-		struct.write(f'#[derive(Clone, Copy)]\n')
+		if len(funcs):
+			struct.write(f'#[derive(Clone, Copy)]\n')
+		else:
+			struct.write(f'#[derive(Default, Clone, Copy)]\n')
 		struct.write(f'pub struct {struct_version} {{')
 		t_impl.write(feature)
 		t_impl.write(f'impl {version} for {struct_version} {{')
-		d_impl.write(feature)
-		d_impl.write(f'impl Default for {struct_version} {{\n')
-		d_impl.write('\tfn default() -> Self {\n')
+		if len(funcs):
+			d_impl.write(feature)
+			d_impl.write(f'impl Default for {struct_version} {{\n')
+			d_impl.write('\tfn default() -> Self {\n')
 		s_impl.write(feature)
 		s_impl.write(f'impl {struct_version} {{\n')
 		g_impl.write(feature)
@@ -959,7 +963,6 @@ def to_rust(outfile, parsed):
 		else:
 			s_impl.write("\tpub fn new(_instance: VkInstance, _get_instance_proc_address: impl FnMut(VkInstance, &'static str) -> *const c_void) -> Self {\n")
 			s_impl.write('\t\tSelf {')
-			d_impl.write('\t\tSelf {')
 		for func in funcs:
 			func_snake = to_snake(func)
 			snakes[func_snake] = func
@@ -1014,14 +1017,13 @@ def to_rust(outfile, parsed):
 		t_impl.write('}\n')
 		if len(funcs):
 			d_impl.write('\t\t}\n')
+			d_impl.write('\t}\n')
+			d_impl.write('}\n')
 			s_impl.write('\t\t}\n')
 		else:
-			d_impl.write('}\n')
 			s_impl.write('}\n')
 		s_impl.write('\t}\n')
 		s_impl.write('}\n')
-		d_impl.write('\t}\n')
-		d_impl.write('}\n')
 		g_impl.write('\t\t.finish()\n')
 		g_impl.write('\t}\n')
 		g_impl.write('}\n')
