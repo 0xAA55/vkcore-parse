@@ -681,236 +681,250 @@ def to_rust(outfile, parsed):
 				enumbf_type = None
 				enumbf_data = None
 			return enumbf_type, enumbf_data
-		for constant, value in constants.items():
-			constval, consttype = process_constant_value(value)
-			f.write(f'/// constant `{constant}` from {version}\n')
-			if not constant.startswith('StdVideo'):
-				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
-			f.write(feature)
-			f.write(f'pub const {constant}: {consttype} = {constval};\n')
-		for constant, (value) in typed_constants.items():
-			constval, consttype = value
-			constval, infertype = process_constant_value(constval)
-			f.write(f'/// constant `{constant}` from {version}\n')
-			if not constant.startswith('StdVideo'):
-				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
-			f.write(feature)
-			f.write(f'pub const {constant}: {consttype} = {constval};\n')
-		for type, tname in typedefs.items():
-			tname = ctype_to_rust(tname)
-			if type not in must_alias:
-				f.write(f'/// type definition `{type}` from {version}\n')
-				if not type.startswith('StdVideo'):
-					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{type}.html>\n')
-			else:
-				f.write(f'/// type definition for Rust: `{type}` = `{tname}`\n')
-				f.write(f'/// - Reference: <https://en.cppreference.com/w/cpp/types/integer.html>\n')
-			if is_good_identifier(type):
+		def process_constants(f):
+			for constant, value in constants.items():
+				constval, consttype = process_constant_value(value)
+				f.write(f'/// constant `{constant}` from {version}\n')
+				if not constant.startswith('StdVideo'):
+					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
 				f.write(feature)
-				f.write('#[allow(non_camel_case_types)]\n')
-				f.write(f'pub type {type} = {tname};\n')
-			else:
-				while type.endswith('*'):
-					type = type[:-1].rstrip()
-					if type.endswith('const'):
-						type = type[:-len('const')]
-				type = type.rsplit(' ', 1)[-1]
+				f.write(f'pub const {constant}: {consttype} = {constval};\n')
+			for constant, (value) in typed_constants.items():
+				constval, consttype = value
+				constval, infertype = process_constant_value(constval)
+				f.write(f'/// constant `{constant}` from {version}\n')
+				if not constant.startswith('StdVideo'):
+					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{constant}.html>\n')
+				f.write(feature)
+				f.write(f'pub const {constant}: {consttype} = {constval};\n')
+		def process_typedefs(f):
+			for type, tname in typedefs.items():
+				tname = ctype_to_rust(tname)
+				if type not in must_alias:
+					f.write(f'/// type definition `{type}` from {version}\n')
+					if not type.startswith('StdVideo'):
+						f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{type}.html>\n')
+				else:
+					f.write(f'/// type definition for Rust: `{type}` = `{tname}`\n')
+					f.write(f'/// - Reference: <https://en.cppreference.com/w/cpp/types/integer.html>\n')
 				if is_good_identifier(type):
 					f.write(feature)
 					f.write('#[allow(non_camel_case_types)]\n')
 					f.write(f'pub type {type} = {tname};\n')
-			enumbf_type, enumbf_data = is_bitfield_enum(type)
-			if enumbf_type is not None:
-				f.write(f'/// Convert `{type}` to `String`, showing the composition of the bits from the member of `{enumbf_type}`\n')
-				f.write(feature)
-				f.write(f'pub fn {to_snake(type)}_to_string(value: {type}) -> String {{\n')
-				f.write(f'\tlet mut flags = Vec::<&str>::with_capacity({len(enumbf_data)});\n')
-				for enum_string in enumbf_data:
-					f.write(f'\tif (value & {enumbf_type}::{enum_string} as {type}) == {enumbf_type}::{enum_string} as {type} {{\n')
-					f.write(f'\t\tflags.push("{enumbf_type}::{enum_string}");\n')
+				else:
+					while type.endswith('*'):
+						type = type[:-1].rstrip()
+						if type.endswith('const'):
+							type = type[:-len('const')]
+					type = type.rsplit(' ', 1)[-1]
+					if is_good_identifier(type):
+						f.write(feature)
+						f.write('#[allow(non_camel_case_types)]\n')
+						f.write(f'pub type {type} = {tname};\n')
+				enumbf_type, enumbf_data = is_bitfield_enum(type)
+				if enumbf_type is not None:
+					f.write(f'/// Convert `{type}` to `String`, showing the composition of the bits from the member of `{enumbf_type}`\n')
+					f.write(feature)
+					f.write(f'pub fn {to_snake(type)}_to_string(value: {type}) -> String {{\n')
+					f.write(f'\tlet mut flags = Vec::<&str>::with_capacity({len(enumbf_data)});\n')
+					for enum_string in enumbf_data:
+						f.write(f'\tif (value & {enumbf_type}::{enum_string} as {type}) == {enumbf_type}::{enum_string} as {type} {{\n')
+						f.write(f'\t\tflags.push("{enumbf_type}::{enum_string}");\n')
+						f.write('\t}\n')
+					f.write(f'\tlet ret = flags.join(" | ");\n')
+					f.write('\tif !ret.is_empty() {\n')
+					f.write('\t\tret\n')
+					f.write('\t} else {\n')
+					f.write('\t\tString::from("0")\n')
 					f.write('\t}\n')
-				f.write(f'\tlet ret = flags.join(" | ");\n')
-				f.write('\tif !ret.is_empty() {\n')
-				f.write('\t\tret\n')
-				f.write('\t} else {\n')
-				f.write('\t\tString::from("0")\n')
+					f.write('}\n')
+		def process_handles(f):
+			for handle in handles:
+				f.write(f'/// Normal handle `{handle}` from {version}\n')
+				if not handle.startswith('StdVideo'):
+					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html>\n')
+				f.write(f'{feature_inline}#[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
+				f.write(f'{feature_inline}pub type {handle} = *const {handle}_T;\n')
+			for handle in non_dispatchable_handles:
+				f.write(f'/// Non-dispatchable handle `{handle}` from {version}\n')
+				if not handle.startswith('StdVideo'):
+					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html\n')
+				f.write(f'{feature_inline}#[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
+				f.write(f'{feature_inline}#[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
+				f.write(f'{feature_inline}#[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
+		def process_enums(f):
+			for enum, enumpair in enums.items():
+				already_values = {}
+				asso = io.StringIO()
+				f.write(f'/// enum `{enum}` from {version}\n')
+				if not enum.startswith('StdVideo'):
+					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{enum}.html>\n')
+				f.write(feature)
+				f.write('#[repr(C)]\n')
+				f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
+				f.write('#[allow(non_camel_case_types)]\n')
+				f.write(f'pub enum {enum} {{\n')
+				for enumname, enumval in enumpair.items():
+					try:
+						enumdef, enumfrom = all_enum_values[enumval]
+						asso.write(f'\tpub const {enumname}: {enumfrom} = {enumfrom}::{enumval};\n')
+					except KeyError:
+						enumval, valtype = process_constant_value(enumval)
+						try:
+							enumalias = already_values[enumval]
+							asso.write(f'\tpub const {enumname}: {enum} = {enum}::{enumalias};\n')
+						except KeyError:
+							f.write(f'\t{enumname} = {enumval},\n')
+							already_values |= {enumval: enumname}
+				f.write('}\n')
+				asso = asso.getvalue()
+				if len(asso):
+					f.write(f'impl {enum} {{\n')
+					f.write(asso)
+					f.write('}\n')
+				asso = None
+		def process_unions(f):
+			for union_name, union_guts in unions.items():
+				f.write(f'/// union `{union_name}` from {version}\n')
+				if not union_name.startswith('StdVideo'):
+					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{union_name}.html>\n')
+				f.write(feature)
+				f.write('#[repr(C)]\n')
+				f.write('#[derive(Clone, Copy)]\n')
+				f.write(f'pub union {union_name} {{\n')
+				for name, type in union_guts.items():
+					name, type = process_guts(name, type)
+					f.write(f'\tpub {name}: {type},\n')
+				f.write('}\n')
+				f.write(feature)
+				f.write(f'impl Debug for {union_name} {{\n')
+				f.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
+				f.write(f'\t\tf.debug_struct("{union_name}")\n')
+				for name, type in union_guts.items():
+					name = name.split('[', 1)[0]
+					f.write(f'\t\t.field("{name}", unsafe {{&self.{name}}})\n')
+				f.write('\t\t.finish()\n')
 				f.write('\t}\n')
 				f.write('}\n')
-		for handle in handles:
-			f.write(f'/// Normal handle `{handle}` from {version}\n')
-			if not handle.startswith('StdVideo'):
-				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html>\n')
-			f.write(f'{feature_inline}#[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
-			f.write(f'{feature_inline}pub type {handle} = *const {handle}_T;\n')
-		for handle in non_dispatchable_handles:
-			f.write(f'/// Non-dispatchable handle `{handle}` from {version}\n')
-			if not handle.startswith('StdVideo'):
-				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{handle}.html\n')
-			f.write(f'{feature_inline}#[cfg(target_pointer_width = "32")] pub type {handle} = u64;\n')
-			f.write(f'{feature_inline}#[cfg(target_pointer_width = "64")] #[repr(C)] #[derive(Debug, Clone, Copy)] pub struct {handle}_T {{_unused: u32,}}\n')
-			f.write(f'{feature_inline}#[cfg(target_pointer_width = "64")] pub type {handle} = *const {handle}_T;\n')
-		for enum, enumpair in enums.items():
-			already_values = {}
-			asso = io.StringIO()
-			f.write(f'/// enum `{enum}` from {version}\n')
-			if not enum.startswith('StdVideo'):
-				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{enum}.html>\n')
-			f.write(feature)
-			f.write('#[repr(C)]\n')
-			f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
-			f.write('#[allow(non_camel_case_types)]\n')
-			f.write(f'pub enum {enum} {{\n')
-			for enumname, enumval in enumpair.items():
-				try:
-					enumdef, enumfrom = all_enum_values[enumval]
-					asso.write(f'\tpub const {enumname}: {enumfrom} = {enumfrom}::{enumval};\n')
-				except KeyError:
-					enumval, valtype = process_constant_value(enumval)
-					try:
-						enumalias = already_values[enumval]
-						asso.write(f'\tpub const {enumname}: {enum} = {enum}::{enumalias};\n')
-					except KeyError:
-						f.write(f'\t{enumname} = {enumval},\n')
-						already_values |= {enumval: enumname}
-			f.write('}\n')
-			asso = asso.getvalue()
-			if len(asso):
-				f.write(f'impl {enum} {{\n')
-				f.write(asso)
-				f.write('}\n')
-			asso = None
-		for union_name, union_guts in unions.items():
-			f.write(f'/// union `{union_name}` from {version}\n')
-			if not union_name.startswith('StdVideo'):
-				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{union_name}.html>\n')
-			f.write(feature)
-			f.write('#[repr(C)]\n')
-			f.write('#[derive(Clone, Copy)]\n')
-			f.write(f'pub union {union_name} {{\n')
-			for name, type in union_guts.items():
-				name, type = process_guts(name, type)
-				f.write(f'\tpub {name}: {type},\n')
-			f.write('}\n')
-			f.write(feature)
-			f.write(f'impl Debug for {union_name} {{\n')
-			f.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
-			f.write(f'\t\tf.debug_struct("{union_name}")\n')
-			for name, type in union_guts.items():
-				name = name.split('[', 1)[0]
-				f.write(f'\t\t.field("{name}", unsafe {{&self.{name}}})\n')
-			f.write('\t\t.finish()\n')
-			f.write('\t}\n')
-			f.write('}\n')
-		for struct_name, struct_guts in structs.items():
-			f.write(f'/// struct `{struct_name}` from {version}\n')
-			if not struct_name.startswith('StdVideo'):
-				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{struct_name}.html>\n')
-			has_bitfield = False
-			num_bitfields = 0
-			last_bits = 0
-			struct = io.StringIO()
-			s_impl = io.StringIO()
-			d_impl = io.StringIO()
-			f.write(feature)
-			struct.write('#[repr(C)]\n')
-			if bool(struct_guts):
-				struct.write('#[derive(Clone, Copy)]\n')
-			else:
-				struct.write('#[derive(Debug, Clone, Copy)]\n')
-			struct.write(f'pub struct {struct_name} {{\n')
-			if bool(struct_guts):
-				d_impl.write(feature)
-				d_impl.write(f'impl Debug for {struct_name} {{\n')
-				d_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
-				d_impl.write(f'\t\tf.debug_struct("{struct_name}")\n')
-			have_special_fields = False
-			for name, type in struct_guts.items():
-				name, type = process_guts(name, type)
-				enumbf_type, enumbf_data = is_bitfield_enum(type)
-				if ':' in name:
-					if has_bitfield == False:
-						has_bitfield = True
-						num_bitfields = 1
-						s_impl.write(feature)
-						s_impl.write(f'impl {struct_name} {{\n')
-					name, bits = name.split(':', 1)
-					bits = int(bits)
-					bf_name = f'bitfield{num_bitfields}'
-					struct.write(f'\t/// Bitfield: {name}: {type} in {bits} bits\n')
-					s_impl.write(f'\tpub fn get_{name}(&self) -> u32 {{\n')
-					if last_bits:
-						s_impl.write(f'\t\t(self.{bf_name} >> {last_bits}) & {hex((1 << bits) - 1)}\n')
-					else:
-						s_impl.write(f'\t\tself.{bf_name} & {hex((1 << bits) - 1)}\n')
-					s_impl.write('\t}\n')
-					s_impl.write(f'\tpub fn set_{name}(&mut self, value: u32) {{\n')
-					if last_bits:
-						s_impl.write(f'\t\tself.{bf_name} = (value & {hex((1 << bits) - 1)}) << {last_bits};\n')
-					else:
-						s_impl.write(f'\t\tself.{bf_name} = value & {hex((1 << bits) - 1)};\n')
-					s_impl.write('\t}\n')
-					if enumbf_type is not None:
-						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.get_{name}())))\n')
-						have_special_fields = True
-					else:
-						d_impl.write(f'\t\t.field("{name}", &self.get_{name}())\n')
-					last_bits += bits
-					last_bits %= 32
-					if last_bits == 0:
-						struct.write(f'\t{bf_name}: u32,\n')
-						num_bitfields += 1
+		def process_structs(f):
+			for struct_name, struct_guts in structs.items():
+				f.write(f'/// struct `{struct_name}` from {version}\n')
+				if not struct_name.startswith('StdVideo'):
+					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{struct_name}.html>\n')
+				has_bitfield = False
+				num_bitfields = 0
+				last_bits = 0
+				struct = io.StringIO()
+				s_impl = io.StringIO()
+				d_impl = io.StringIO()
+				f.write(feature)
+				struct.write('#[repr(C)]\n')
+				if bool(struct_guts):
+					struct.write('#[derive(Clone, Copy)]\n')
 				else:
-					if last_bits:
+					struct.write('#[derive(Debug, Clone, Copy)]\n')
+				struct.write(f'pub struct {struct_name} {{\n')
+				if bool(struct_guts):
+					d_impl.write(feature)
+					d_impl.write(f'impl Debug for {struct_name} {{\n')
+					d_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
+					d_impl.write(f'\t\tf.debug_struct("{struct_name}")\n')
+				have_special_fields = False
+				for name, type in struct_guts.items():
+					name, type = process_guts(name, type)
+					enumbf_type, enumbf_data = is_bitfield_enum(type)
+					if ':' in name:
+						if has_bitfield == False:
+							has_bitfield = True
+							num_bitfields = 1
+							s_impl.write(feature)
+							s_impl.write(f'impl {struct_name} {{\n')
+						name, bits = name.split(':', 1)
+						bits = int(bits)
 						bf_name = f'bitfield{num_bitfields}'
-						struct.write(f'\tpub {bf_name}: u32,\n')
-						num_bitfields += 1
-						last_bits = 0
-					struct.write(f'\tpub {name}: {type},\n')
-					if enumbf_type is not None:
-						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.{name})))\n')
-						have_special_fields = True
-					elif type.startswith('[i8; '):
-						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", vk_format_maybe_string(&self.{name})))\n')
-						have_special_fields = True
-					elif type.startswith('[u8; '):
-						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", vk_to_byte_array_string(&self.{name})))\n')
-						have_special_fields = True
+						struct.write(f'\t/// Bitfield: {name}: {type} in {bits} bits\n')
+						s_impl.write(f'\tpub fn get_{name}(&self) -> u32 {{\n')
+						if last_bits:
+							s_impl.write(f'\t\t(self.{bf_name} >> {last_bits}) & {hex((1 << bits) - 1)}\n')
+						else:
+							s_impl.write(f'\t\tself.{bf_name} & {hex((1 << bits) - 1)}\n')
+						s_impl.write('\t}\n')
+						s_impl.write(f'\tpub fn set_{name}(&mut self, value: u32) {{\n')
+						if last_bits:
+							s_impl.write(f'\t\tself.{bf_name} = (value & {hex((1 << bits) - 1)}) << {last_bits};\n')
+						else:
+							s_impl.write(f'\t\tself.{bf_name} = value & {hex((1 << bits) - 1)};\n')
+						s_impl.write('\t}\n')
+						if enumbf_type is not None:
+							d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.get_{name}())))\n')
+							have_special_fields = True
+						else:
+							d_impl.write(f'\t\t.field("{name}", &self.get_{name}())\n')
+						last_bits += bits
+						last_bits %= 32
+						if last_bits == 0:
+							struct.write(f'\t{bf_name}: u32,\n')
+							num_bitfields += 1
 					else:
-						d_impl.write(f'\t\t.field("{name}", &self.{name})\n')
-			if last_bits:
-				bf_name = f'bitfield{num_bitfields}'
-				struct.write(f'\tpub {bf_name}: u32,\n')
-			struct.write('}\n')
-			if has_bitfield:
-				s_impl.write('}\n')
-			if bool(struct_guts):
-				d_impl.write('\t\t.finish()\n')
-				d_impl.write('\t}\n')
-				d_impl.write('}\n')
-			if have_special_fields:
-				f.write(struct.getvalue())
-				f.write(s_impl.getvalue())
-				f.write(d_impl.getvalue())
-			else:
-				f.write(struct.getvalue().replace('#[derive(Clone, Copy)]', '#[derive(Debug, Clone, Copy)]'))
-				f.write(s_impl.getvalue())
-		for functype_name, func_data in func_protos.items():
-			funcname = functype_name.split('PFN_', 1)[-1]
-			f.write(f'/// function prototype `{functype_name}` from {version}\n')
-			f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{funcname}.html>\n')
-			f.write(feature)
-			f.write('#[allow(non_camel_case_types)]\n')
-			f.write(f'type {functype_name} = extern "system" fn(')
-			params = []
-			for param_name, param_type in func_data['params'].items():
-				param_name, param_type = process_guts(param_name, param_type, is_param = True)
-				params += [f'{param_name}: {param_type}']
-			f.write(', '.join(params))
-			ret_type = func_data["ret_type"]
-			if ret_type == 'void':
-				f.write(f');\n')
-			else:
-				f.write(f') -> {ctype_to_rust(ret_type)};\n')
+						if last_bits:
+							bf_name = f'bitfield{num_bitfields}'
+							struct.write(f'\tpub {bf_name}: u32,\n')
+							num_bitfields += 1
+							last_bits = 0
+						struct.write(f'\tpub {name}: {type},\n')
+						if enumbf_type is not None:
+							d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.{name})))\n')
+							have_special_fields = True
+						elif type.startswith('[i8; '):
+							d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", vk_format_maybe_string(&self.{name})))\n')
+							have_special_fields = True
+						elif type.startswith('[u8; '):
+							d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", vk_to_byte_array_string(&self.{name})))\n')
+							have_special_fields = True
+						else:
+							d_impl.write(f'\t\t.field("{name}", &self.{name})\n')
+				if last_bits:
+					bf_name = f'bitfield{num_bitfields}'
+					struct.write(f'\tpub {bf_name}: u32,\n')
+				struct.write('}\n')
+				if has_bitfield:
+					s_impl.write('}\n')
+				if bool(struct_guts):
+					d_impl.write('\t\t.finish()\n')
+					d_impl.write('\t}\n')
+					d_impl.write('}\n')
+				if have_special_fields:
+					f.write(struct.getvalue())
+					f.write(s_impl.getvalue())
+					f.write(d_impl.getvalue())
+				else:
+					f.write(struct.getvalue().replace('#[derive(Clone, Copy)]', '#[derive(Debug, Clone, Copy)]'))
+					f.write(s_impl.getvalue())
+		def proc_protos(f):
+			for functype_name, func_data in func_protos.items():
+				funcname = functype_name.split('PFN_', 1)[-1]
+				f.write(f'/// function prototype `{functype_name}` from {version}\n')
+				f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{funcname}.html>\n')
+				f.write(feature)
+				f.write('#[allow(non_camel_case_types)]\n')
+				f.write(f'type {functype_name} = extern "system" fn(')
+				params = []
+				for param_name, param_type in func_data['params'].items():
+					param_name, param_type = process_guts(param_name, param_type, is_param = True)
+					params += [f'{param_name}: {param_type}']
+				f.write(', '.join(params))
+				ret_type = func_data["ret_type"]
+				if ret_type == 'void':
+					f.write(f');\n')
+				else:
+					f.write(f') -> {ctype_to_rust(ret_type)};\n')
+		process_constants(f)
+		process_typedefs(f)
+		process_handles(f)
+		process_enums(f)
+		process_unions(f)
+		process_structs(f)
+		proc_protos(f)
 		dummys = io.StringIO()
 		traits = io.StringIO()
 		struct = io.StringIO()
