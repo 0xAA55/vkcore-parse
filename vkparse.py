@@ -1209,6 +1209,7 @@ def to_rust(outfile, parsed):
 		vk_s_impl.write('\t}\n')
 		vk_s_impl.write('\n')
 		vk_s_impl.write(vk_g_impl.getvalue())
+		vk_g_impl = None
 		vk_s_impl.write('\n')
 		vk_s_impl.write('\t/// Get `VkInstance`\n')
 		vk_s_impl.write('\tpub fn get_instance(&self) -> VkInstance {\n')
