@@ -945,7 +945,7 @@ def to_rust(outfile, parsed):
 		if len(funcs):
 			struct.write(f'#[derive(Clone, Copy)]\n')
 		else:
-			struct.write(f'#[derive(Default, Clone, Copy)]\n')
+			struct.write(f'#[derive(Default, Debug, Clone, Copy)]\n')
 		struct.write(f'pub struct {struct_version} {{')
 		t_impl.write(feature)
 		t_impl.write(f'impl {version} for {struct_version} {{')
@@ -955,10 +955,11 @@ def to_rust(outfile, parsed):
 			d_impl.write('\tfn default() -> Self {\n')
 		s_impl.write(feature)
 		s_impl.write(f'impl {struct_version} {{\n')
-		g_impl.write(feature)
-		g_impl.write(f'impl Debug for {struct_version} {{\n')
-		g_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
-		g_impl.write(f'\t\tf.debug_struct("{struct_version}")\n')
+		if len(funcs):
+			g_impl.write(feature)
+			g_impl.write(f'impl Debug for {struct_version} {{\n')
+			g_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
+			g_impl.write(f'\t\tf.debug_struct("{struct_version}")\n')
 		vk_struct.write(f'\t/// Subset of {version}\n')
 		vk_struct.write(feature_indent)
 		vk_struct.write(f'\t{snake_version}: {struct_version},\n')
@@ -1073,9 +1074,10 @@ def to_rust(outfile, parsed):
 			s_impl.write('}\n')
 		s_impl.write('\t}\n')
 		s_impl.write('}\n')
-		g_impl.write('\t\t.finish()\n')
-		g_impl.write('\t}\n')
-		g_impl.write('}\n')
+		if len(funcs):
+			g_impl.write('\t\t.finish()\n')
+			g_impl.write('\t}\n')
+			g_impl.write('}\n')
 		vk_traits.write('}\n')
 		f.write(dummys.getvalue())
 		f.write(traits.getvalue())
