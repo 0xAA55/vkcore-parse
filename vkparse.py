@@ -909,7 +909,7 @@ def to_rust(outfile, parsed):
 		d_impl = io.StringIO()
 		s_impl = io.StringIO()
 		g_impl = io.StringIO()
-		struct_version = f'Vulkan_{version.split("_", 1)[-1]}'
+		struct_version = to_camel(f'VULKAN_{version.split("_", 1)[-1]}'.lower(), True)
 		snake_version = to_snake(version)
 		traits.write(f'/// trait for `{version}`\n')
 		if not version.startswith('StdVideo'):
