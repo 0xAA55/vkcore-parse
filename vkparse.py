@@ -810,12 +810,16 @@ def to_rust(outfile, parsed):
 			d_impl = io.StringIO()
 			f.write(feature)
 			struct.write('#[repr(C)]\n')
-			struct.write('#[derive(Clone, Copy)]\n')
+			if bool(struct_guts):
+				struct.write('#[derive(Clone, Copy)]\n')
+			else:
+				struct.write('#[derive(Debug, Clone, Copy)]\n')
 			struct.write(f'pub struct {struct_name} {{\n')
-			d_impl.write(feature)
-			d_impl.write(f'impl Debug for {struct_name} {{\n')
-			d_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
-			d_impl.write(f'\t\tf.debug_struct("{struct_name}")\n')
+			if bool(struct_guts):
+				d_impl.write(feature)
+				d_impl.write(f'impl Debug for {struct_name} {{\n')
+				d_impl.write('\tfn fmt(&self, f: &mut Formatter) -> fmt::Result {\n')
+				d_impl.write(f'\t\tf.debug_struct("{struct_name}")\n')
 			have_special_fields = False
 			for name, type in struct_guts.items():
 				name, type = process_guts(name, type)
@@ -876,9 +880,10 @@ def to_rust(outfile, parsed):
 			struct.write('}\n')
 			if has_bitfield:
 				s_impl.write('}\n')
-			d_impl.write('\t\t.finish()\n')
-			d_impl.write('\t}\n')
-			d_impl.write('}\n')
+			if bool(struct_guts):
+				d_impl.write('\t\t.finish()\n')
+				d_impl.write('\t}\n')
+				d_impl.write('}\n')
 			if have_special_fields:
 				f.write(struct.getvalue())
 				f.write(s_impl.getvalue())
