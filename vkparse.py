@@ -707,6 +707,7 @@ def to_rust(outfile, parsed):
 				f.write(f'/// - Reference: <https://en.cppreference.com/w/cpp/types/integer.html>\n')
 			if is_good_identifier(type):
 				f.write(feature)
+				f.write('#[allow(non_camel_case_types)]\n')
 				f.write(f'pub type {type} = {tname};\n')
 			else:
 				while type.endswith('*'):
@@ -716,6 +717,7 @@ def to_rust(outfile, parsed):
 				type = type.rsplit(' ', 1)[-1]
 				if is_good_identifier(type):
 					f.write(feature)
+					f.write('#[allow(non_camel_case_types)]\n')
 					f.write(f'pub type {type} = {tname};\n')
 			enumbf_type, enumbf_data = is_bitfield_enum(type)
 			if enumbf_type is not None:
@@ -756,6 +758,7 @@ def to_rust(outfile, parsed):
 			f.write(feature)
 			f.write('#[repr(C)]\n')
 			f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
+			f.write('#[allow(non_camel_case_types)]\n')
 			f.write(f'pub enum {enum} {{\n')
 			for enumname, enumval in enumpair.items():
 				try:
@@ -896,6 +899,7 @@ def to_rust(outfile, parsed):
 			f.write(f'/// function prototype `{functype_name}` from {version}\n')
 			f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{funcname}.html>\n')
 			f.write(feature)
+			f.write('#[allow(non_camel_case_types)]\n')
 			f.write(f'type {functype_name} = extern "system" fn(')
 			params = []
 			for param_name, param_type in func_data['params'].items():
@@ -920,6 +924,7 @@ def to_rust(outfile, parsed):
 		if not version.startswith('StdVideo'):
 			traits.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{version}.html>\n')
 		traits.write(feature)
+		traits.write('#[allow(non_camel_case_types)]\n')
 		traits.write(f'pub trait {version}: Debug {{')
 		struct.write(f'/// struct for `{version}`\n')
 		struct.write(feature)
@@ -1070,7 +1075,6 @@ def to_rust(outfile, parsed):
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
 		f.write('#![allow(non_snake_case)]\n')
-		f.write('#![allow(non_camel_case_types)]\n')
 		f.write('#![allow(non_upper_case_globals)]\n')
 		f.write('#![allow(unpredictable_function_pointer_comparisons)]\n')
 		f.write('#![allow(clippy::too_many_arguments)]\n')
