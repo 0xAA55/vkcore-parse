@@ -215,7 +215,7 @@ def parse(input, initial = {}, is_include_header = 0, handles = [], typedefs = {
 				is_first_ver = False
 				if cur_ver is None:
 					is_first_ver = True
-				cur_ver = line.split(' ', 2)[1];
+				cur_ver = line.split(' ', 2)[1]
 				ret[cur_ver] = {
 					'typedefs': {},
 					'handles': [],
@@ -532,7 +532,7 @@ def to_rust(outfile, parsed):
 	def union_member_type_process(union, type):
 		is_enum = type in all_enum_names
 		if is_enum:
-			struct.write(f'\t/// Original type: {type}\n');
+			struct.write(f'\t/// Original type: {type}\n')
 			type = 'u32'
 		try:
 			type = must_alias[type]
@@ -543,10 +543,10 @@ def to_rust(outfile, parsed):
 		is_pointer = type.startswith(('&', '*'))
 		is_enum = type in all_enum_names
 		if is_pointer:
-			struct.write(f'\t/// Original type: {type}\n');
+			struct.write(f'\t/// Original type: {type}\n')
 			type = 'usize'
 		elif is_enum:
-			struct.write(f'\t/// Original type: {type}\n');
+			struct.write(f'\t/// Original type: {type}\n')
 			type = 'u32'
 		try:
 			type = must_alias[type]
@@ -558,8 +558,8 @@ def to_rust(outfile, parsed):
 	vk_s_impl = io.StringIO()
 	vk_g_impl = io.StringIO()
 	vk_struct.write('/// The all-in-one struct for your Vulkan APIs\n')
-	vk_struct.write('#[derive(Default, Clone, Debug)]\n');
-	vk_struct.write('pub struct VkCore {\n');
+	vk_struct.write('#[derive(Default, Clone, Debug)]\n')
+	vk_struct.write('pub struct VkCore {\n')
 	vk_struct.write('\t/// The Vulkan instance\n')
 	vk_struct.write(f'\tpub instance: Arc<VkInstanceWrap>,\n')
 	vk_struct.write('\t/// The Vulkan extension strings\n')
@@ -857,7 +857,7 @@ def to_rust(outfile, parsed):
 						bf_name = f'bitfield{num_bitfields}'
 						struct.write(f'\tpub {bf_name}: u32,\n')
 						num_bitfields += 1
-						last_bits = 0;
+						last_bits = 0
 					struct.write(f'\tpub {name}: {type},\n')
 					if enumbf_type is not None:
 						d_impl.write(f'\t\t.field("{name}", &format_args!("{{}}", {to_snake(type)}_to_string(self.{name})))\n')
@@ -880,18 +880,18 @@ def to_rust(outfile, parsed):
 			d_impl.write('\t}\n')
 			d_impl.write('}\n')
 			if have_special_fields:
-				f.write(struct.getvalue());
-				f.write(s_impl.getvalue());
-				f.write(d_impl.getvalue());
+				f.write(struct.getvalue())
+				f.write(s_impl.getvalue())
+				f.write(d_impl.getvalue())
 			else:
-				f.write(struct.getvalue().replace('#[derive(Clone, Copy)]', '#[derive(Debug, Clone, Copy)]'));
-				f.write(s_impl.getvalue());
+				f.write(struct.getvalue().replace('#[derive(Clone, Copy)]', '#[derive(Debug, Clone, Copy)]'))
+				f.write(s_impl.getvalue())
 		for functype_name, func_data in func_protos.items():
 			funcname = functype_name.split('PFN_', 1)[-1]
 			f.write(f'/// function prototype `{functype_name}` from {version}\n')
 			f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{funcname}.html>\n')
 			f.write(feature)
-			f.write(f'type {functype_name} = extern "system" fn(');
+			f.write(f'type {functype_name} = extern "system" fn(')
 			params = []
 			for param_name, param_type in func_data['params'].items():
 				param_name, param_type = process_guts(param_name, param_type, is_param = True)
@@ -984,7 +984,7 @@ def to_rust(outfile, parsed):
 			t_impl.write(f'\tfn {func}(&self, {", ".join(params)})')
 			vk_traits.write('\t#[inline(always)]\n')
 			vk_traits.write(f'\tfn {func}(&self, {", ".join(params)})')
-			d_impl.write(f'\t\t\t{func_snake}: dummy_{func},\n');
+			d_impl.write(f'\t\t\t{func_snake}: dummy_{func},\n')
 			if ret_type == 'void':
 				r_rettype_suffix = ''
 				dummys.write(' {\n')
@@ -1003,7 +1003,7 @@ def to_rust(outfile, parsed):
 				traits.write(f' -> Result<{ret_type_rust}>;\n')
 				t_impl.write(f' -> Result<{ret_type_rust}> {{\n')
 				vk_traits.write(f' -> Result<{ret_type_rust}> {{\n')
-			dummys.write(f'\tpanic_any(VkError::NullFunctionPointer("{func}"))\n');
+			dummys.write(f'\tpanic_any(VkError::NullFunctionPointer("{func}"))\n')
 			dummys.write('}\n')
 			s_impl.write(f'\t\t\t{func_snake}: {{let proc = get_instance_proc_address(instance, "{func}"); if proc.is_null() {{dummy_{func}}} else {{unsafe {{transmute(proc)}}}}}},\n')
 			g_impl.write(f'\t\t.field("{func}", &if self.{func_snake} == dummy_{func} {{null::<c_void>()}} else {{self.{func_snake} as *const c_void}})\n')
@@ -1060,7 +1060,7 @@ def to_rust(outfile, parsed):
 		f.write(d_impl.getvalue())
 		f.write(s_impl.getvalue())
 		f.write(g_impl.getvalue())
-	vkresult_enum = parsed['VK_VERSION_1_0']['enums']['VkResult'];
+	vkresult_enum = parsed['VK_VERSION_1_0']['enums']['VkResult']
 	with open(outfile, 'w') as f:
 		f.write('\n')
 		f.write('#![allow(dead_code)]\n')
