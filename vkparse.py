@@ -642,7 +642,7 @@ def to_rust(outfile, parsed):
 	vk_s_impl.write('\t\t\textensions: extensions.into_iter().collect(),\n')
 	vk_s_impl.write('\t\t\tapp_info,\n')
 	def process_version(version, verdata, f):
-		nonlocal vk_struct, vk_traits, vk_s_impl
+		nonlocal vk_struct, vk_traits, vk_s_impl, vk_g_impl
 		constants = verdata['constants']
 		typed_constants = verdata['typed_constants']
 		typedefs = verdata['typedefs']
