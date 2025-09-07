@@ -638,7 +638,7 @@ def to_rust(outfile, parsed):
 	vk_s_impl.write('\t\t\tenabledLayerCount: layers.len() as u32,\n')
 	vk_s_impl.write('\t\t\tpApplicationInfo: &app_info,\n')
 	vk_s_impl.write('\t\t\tppEnabledLayerNames: layer_ptrs.as_ptr(),\n')
-	vk_s_impl.write('\t\t\tenabledExtensionCount: ext_count,\n')
+	vk_s_impl.write('\t\t\tenabledExtensionCount: ext_pointers.len() as u32,\n')
 	vk_s_impl.write('\t\t\tppEnabledExtensionNames: ext_pointers.as_ptr()\n')
 	vk_s_impl.write('\t\t};\n')
 	vk_s_impl.write('\t\tlet vkCreateInstance = get_instance_proc_address(null(), "vkCreateInstance");\n')
