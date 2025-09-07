@@ -614,7 +614,7 @@ def to_rust(outfile, parsed):
 	vk_s_impl.write('\t\tlet ext_pointers: Vec<*const i8> = extensions.iter().map(|prop|prop.extensionName.as_ptr()).collect();\n')
 	vk_s_impl.write('\t\tlet extension_strings: Vec<String> = ext_pointers.iter().map(|p|unsafe {CStr::from_ptr(*p)}.to_string_lossy().to_string()).collect();\n')
 	vk_s_impl.write('\t\t#[cfg(feature = "validation_layer")]\n')
-	vk_s_impl.write('\t\tlet layers = ["VK_LAYER_KHRONOS_validation\0"];\n')
+	vk_s_impl.write('\t\tlet layers = ["VK_LAYER_KHRONOS_validation\\0"];\n')
 	vk_s_impl.write('\t\t#[cfg(not(feature = "validation_layer"))]\n')
 	vk_s_impl.write("\t\tlet layers: [&'static str; 0] = [];\n")
 	vk_s_impl.write('\t\tlet layer_ptrs: Vec<*const i8> = layers.iter().map(|l|l.as_ptr() as *const i8).collect();\n')
