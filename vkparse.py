@@ -19,10 +19,9 @@ def pushd(new_dir):
 
 def to_snake(camel_case):
 	ret = ''
-	uppers = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 	last_is_upper = False
 	for a in camel_case:
-		if a in uppers:
+		if a.isupper():
 			if last_is_upper == False:
 				last_is_upper = True
 				ret += f'_{a.lower()}'
