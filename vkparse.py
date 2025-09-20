@@ -782,7 +782,6 @@ def to_rust(outfile, parsed):
 					f.write(f'impl {enum} {{\n')
 					f.write(asso)
 					f.write('}\n')
-				asso = None
 		def process_unions(f):
 			for union_name, union_guts in unions.items():
 				f.write(f'/// union `{union_name}` from {version}\n')
