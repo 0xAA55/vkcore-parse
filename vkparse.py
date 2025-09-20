@@ -681,6 +681,16 @@ def to_rust(outfile, parsed):
 				enumbf_type = None
 				enumbf_data = None
 			return enumbf_type, enumbf_data
+		def is_the_enum_bitfield(enumname):
+			try:
+				typename, suffix = enumname.rsplit("Bits", 1)
+			except ValueError:
+				return None, None
+			typename += 's'
+			if typename in typedefs:
+				return typename, suffix
+			else:
+				return None, None
 		def process_constants(f):
 			for constant, value in constants.items():
 				constval, consttype = process_constant_value(value)
