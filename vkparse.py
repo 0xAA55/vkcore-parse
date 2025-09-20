@@ -761,7 +761,7 @@ def to_rust(outfile, parsed):
 					f.write(f'/// - Reference: <https://registry.khronos.org/vulkan/specs/latest/man/html/{enum}.html>\n')
 				f.write(feature)
 				f.write('#[repr(C)]\n')
-				f.write('#[derive(Debug, Clone, Copy, PartialEq)]\n')
+				f.write('#[derive(Debug, Clone, Copy, PartialEq, Eq)]\n')
 				f.write('#[allow(non_camel_case_types)]\n')
 				f.write(f'pub enum {enum} {{\n')
 				for enumname, enumval in enumpair.items():
